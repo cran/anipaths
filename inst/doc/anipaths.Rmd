@@ -1,0 +1,71 @@
+---
+title: "anipaths"
+author: "Henry Scharf"
+date: "`r Sys.Date()`"
+output: 
+  rmarkdown::html_vignette:
+    fig_caption: yes
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+The package `anipaths` contains a collection of telemetry observations for turkey vultures originally analyzed in:
+
+> Dodge S, Bohrer G, Bildstein K, Davidson SC, Weinzierl R, Mechard MJ, Barber D, Kays R, Brandes D, Han J (2014) Environmental drivers of variability in the movement ecology of turkey vultures (Cathartes aura) in North and South America. Philosophical Transactions of the Royal Society B 20130195.
+
+To animate the locations, we first need to create a time stamp variable of class `numeric` or `POSIX`. One advantage to using the `POSIX` class is that we can specify the gaps in the interpolation (`delta.t`) using convenient character strings like `"hour"` or `"week"`.
+
+```{r, fig.show='hold', fig.cap="test", eval = F}
+library(anipaths)
+vultures$POSIX <- as.POSIXct(vultures$timestamp, tz = "UTC")
+vultures_paths <- vultures[format(vultures$POSIX, "%Y") == 2009, ]
+delta.t <- "day"
+animate_paths(paths = vultures_paths, 
+              delta.t = delta.t,
+              coord = c("location.long", "location.lat"),
+              Time.name = "POSIX",
+              ID.name = "individual.local.identifier")
+```
+
+The animation isn't much good without context, so we add a simple map. There are lots of ways to incorporate a map. The simplest way is to set `background` to `TRUE`, in which case `anipaths` will do the best it can to select a map based on the data. In the next example, we've changed the time step to help the animations load a little faster.
+```{r map_logical, eval = F}
+delta.t <- "week"
+animate_paths(paths = vultures_paths, 
+              delta.t = delta.t,
+              coord = c("location.long", "location.lat"),
+              Time.name = "POSIX",
+              ID.name = "individual.local.identifier", 
+              background = TRUE)
+```
+
+You can also give a long/lat `location`, `zoom` level (3-21; see `?ggmap::get_map()`), and `maptype` (`satellite`, `terrain`, `hybrid`) to be passed to `ggmap::get_map()`, and `anipaths` will make a background for you. As shown below, the value of `delta.t` can be specified as a numeric, which will be interpreted in whatever units used by `as.numeric(paths['Time.name'])` (in our case, this is seconds). 
+```{r map_google, eval = F}
+vultures_paths <- vultures[format(vultures$POSIX, "%Y") == 2009:2010, ]
+delta.t <- 3600*24*2 ## number of seconds in two days
+background <- list(location = c(-90, 10), 
+                   zoom = 3, 
+                   maptype = "satellite")
+animate_paths(paths = vultures_paths, 
+              delta.t = delta.t,
+              coord = c("location.long", "location.lat"),
+              Time.name = "POSIX",
+              ID.name = "individual.local.identifier", 
+              background = background)
+```
+
+Finally, you can also supply your own background image. The projection and units should match the data.
+```{r map_simple, eval = F}
+delta.t <- "week"
+background <- rworldmap::getMap(resolution = "coarse")
+sp::proj4string(background) ## matches default in animate_paths()
+animate_paths(paths = vultures_paths, 
+              delta.t = delta.t,
+              coord = c("location.long", "location.lat"),
+              Time.name = "POSIX",
+              ID.name = "individual.local.identifier", 
+              background = background)
+```
+
+The function `animate_paths()` must project the data to match Google's map tiles, so if your data aren't in long/lat format, make sure you update the \code{paths.proj} variable with the correct string.
