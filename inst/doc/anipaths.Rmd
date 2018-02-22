@@ -11,6 +11,8 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+## Animating animal trajectories
+
 The package `anipaths` contains a collection of telemetry observations for turkey vultures originally analyzed in:
 
 > Dodge S, Bohrer G, Bildstein K, Davidson SC, Weinzierl R, Mechard MJ, Barber D, Kays R, Brandes D, Han J (2014) Environmental drivers of variability in the movement ecology of turkey vultures (Cathartes aura) in North and South America. Philosophical Transactions of the Royal Society B 20130195.
@@ -69,3 +71,9 @@ animate_paths(paths = vultures_paths,
 ```
 
 The function `animate_paths()` must project the data to match Google's map tiles, so if your data aren't in long/lat format, make sure you update the \code{paths.proj} variable with the correct string.
+
+If you have `ffmpeg` installed on your system, you can set `method = "mp4"` to create a stand-alone video that is easy to share with others. For more information, see https://www.ffmpeg.org/ for instructions. 
+
+## Check interpolation
+
+As a way to check that `anipaths` is producing reasonable interpolations of the telemetry observations, a generic `plot()` function is provided that takes an argument of class `paths_animation` produced by calling `animate_paths()` with `return.paths = TRUE`. See `example(plot.paths_animation)`. Adjusting the parameters of the interpolation can be done by modifying the `bs` and `max.knots` arguments. As a general rule, if the interpolated paths look "too smooth", try increasing `max.knots`.

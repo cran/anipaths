@@ -6,15 +6,18 @@
 \usage{
 animate_paths(paths, times = NULL, delta.t = NULL, n.frames = 12 * 30,
   interval = 1/12, paths.proj = "+proj=longlat", coord = c("x", "y"),
-  Time.name = "time", ID.name = NULL, background = NULL, bg.axes = TRUE,
-  htmlfile = "index.html", pt.colors = NULL, dimmed = NULL, res = 1.5,
-  plot.date = TRUE, legend.loc = "topright", network = NULL,
-  network.times = NULL, network.thresh = 0.5, network.colors = NULL,
-  tail.length = 5, xlim = NULL, ylim = NULL, main = NULL,
-  bg.opts = NULL, override = FALSE, ...)
+  Time.name = "time", covariate.name = NULL, covariate.colors = c("black",
+  "white"), covariate.thresh = NULL, covariate.legend.loc = "right",
+  ID.name = NULL, background = NULL, bg.axes = TRUE, method = "html",
+  pt.colors = NULL, dimmed = NULL, res = 1.5, plot.date = TRUE,
+  legend.loc = "topright", network = NULL, network.times = NULL,
+  network.thresh = 0.5, network.colors = NULL, tail.length = 5,
+  xlim = NULL, ylim = NULL, main = NULL, bg.opts = NULL,
+  bs = "'tp', fx=T", max.knots = 20, uncertainty.level = NA,
+  override = FALSE, return.paths = FALSE, ...)
 }
 \arguments{
-\item{paths}{Either a \code{data.frame} with longitudes/eastings, latitudes/northings, IDs, and times (see \code{coord}, \code{ID.name}, and \code{Time.name}), a \code{SpatialPointsDataFrame} with IDs and times, or a list of data.frames containing the longitudes, latitudes, and times for each individual (with names provided)..}
+\item{paths}{Either a \code{data.frame} with longitudes/eastings, latitudes/northings, IDs, and times (see \code{coord}, \code{ID.name}, and \code{Time.name}), a \code{SpatialPointsDataFrame} with IDs and times, or a list of data.frames containing the longitudes, latitudes, and times for each individual (with names provided).}
 
 \item{times}{If all paths are already synchornous, another option for passing the data is to define \code{paths} as a list of 2-column matrices, all with the same number of rows, and to specify the times separately via this argument. This is intended to reduce redundancy slightly, but is probably not the most common way to use this package.}
 
@@ -30,15 +33,23 @@ animate_paths(paths, times = NULL, delta.t = NULL, n.frames = 12 * 30,
 
 \item{Time.name}{The name of the columns in \code{paths} gving the observation times. This column must be of class \code{POSIXt}, or numeric.}
 
+\item{covariate.name}{The name of the column in \code{paths} that identifies the covariate to be mapped to a ring of color around each point.}
+
+\item{covariate.colors}{vector of colors which will be used in their given order to make a color ramp (see \code{colorRamp()})}
+
+\item{covariate.thresh}{if changed from its default value of \code{NULL}, the interpolated value of the covariate will be binarized based on this numeric value.}
+
+\item{covariate.legend.loc}{either the location of the covariate legend, or \code{NA} if no legend is desired}
+
 \item{ID.name}{The name of the column in \code{paths} that identifies each individual. If left as \code{NULL} (default), a single individual is assumed.}
 
 \item{background}{Three possibilities: (1) A single background image over which animation will be overlayed, or a list of images corresponding to each frame. (2) A list with values \code{location} (long/lat), \code{zoom}, and \code{maptype} (see \code{ggmap::get_map()}) which will be used to generate a background for the animation based on Google maps tiles. (3) A logical value of \code{TRUE}, which will cue the function to get the best Google Map tile combination it can come up with. Note: \code{ggmap} must be installed for (2) and (3).}
 
 \item{bg.axes}{logical: should animation place axis labels when using a background image (default is \code{TRUE}). If \code{RGoogleMaps} is used to produce background, labels will be "northing" and "easting". Otherwise, the strings given to \code{coord} will be used.}
 
-\item{htmlfile}{Character string giving the location and name of the \code{.html} file (e.g., \code{"path/to/file.html"}). See \code{animation} package for details.}
+\item{method}{either \code{"html"} (default) or \code{"mp4"}. The latter requires the user has installed \code{ffmpeg} (see \code{?animation::saveVideo()}).}
 
-\item{pt.colors}{A vector of colors to be used for each individual in the animation. Default values come from Color Brewer palettes. When a network is provided, this is ignored and individuals are all colored black.}
+\item{pt.colors}{A vector of colors to be used for each individual in the animation. Default values come from Color Brewer palettes. When a network is provided, this is ignored and individuals are all colored black. If \code{NA}, no plot colors are chosen to distinguish individuals. This can be useful when making animations involving a covariate. Consider also setting \code{legend.loc} to \code{NA} in this case.}
 
 \item{dimmed}{Numeric vector of individuals to "dim" in the animation. Order corresponds to the order of the ID.name variable, or order of paths list.}
 
@@ -46,7 +57,7 @@ animate_paths(paths, times = NULL, delta.t = NULL, n.frames = 12 * 30,
 
 \item{plot.date}{Logical variable toggling date text at the time center of the animation.}
 
-\item{legend.loc}{passed to first argument of \code{legend()} function. Default is \code{"topright"}.}
+\item{legend.loc}{passed to first argument of \code{legend()} function. Default is \code{"topright"}. \code{NA} removes legend.}
 
 \item{network}{Array of dimensions (# individuals) \eqn{\times} (# individuals) \eqn{\times} \code{n.frames} that gives a dyanmic network structure among the individuals.}
 
@@ -66,12 +77,20 @@ animate_paths(paths, times = NULL, delta.t = NULL, n.frames = 12 * 30,
 
 \item{bg.opts}{Options passed to \code{plot()} function call that makes background in each frame. For example, this could be used to specify blue ocean and gray landcover if \code{background} is a \code{SpatialPolygonsDataFrame} and \code{bg.opts = list(bg = "dodgerblue4", col = "gray", border = "gray")}.}
 
+\item{bs}{default is \code{"'tp'"} (thin plate splines), but this can be any spline basis supported by \code{s()} in the \code{mgcv} package.}
+
+\item{max.knots}{maximum number of allowed knots. This actual number of knots used in the fitting will be \code{min(max.knots, #observations_i)}.}
+
+\item{uncertainty.level}{value in \eqn{(0, 1)} corresponding to \code{level} at which to draw uncertainty ellipses. \code{NA} (default) results in no ellipses.}
+
 \item{override}{Logical variable toggling where or not to override warnings about how long the animation procedure will take.}
 
-\item{...}{other arguments to be passed to \code{ani.options} to animation options such as the time interval between image frames}
+\item{return.paths}{logical. Default is \code{FALSE}, but if \code{TRUE} then the interpolated paths are returned and no animation is produced.}
+
+\item{...}{other arguments to be passed to \code{ani.options} to animation options such as the time interval between image frames.}
 }
 \value{
-HTML file and a directory containing the individual images.
+video file, possibly a directory containing the individual images, or interpolated paths.
 }
 \description{
 Animates telemetry data for the purposed of EDA using smoothing splines to interpolate the observed locations. The animations are particularly useful when examining multiple simultaneous trajectories. The output of the call to \code{animate_paths()} should bring up a browser window that shows the animation. Additionally, the images generated in \code{images/} (or else the value set for \code{imgdir}) may be used with ffmpeg, latex, or other presentation software that can build animations directly from a sequence of images.
@@ -79,21 +98,26 @@ Animates telemetry data for the purposed of EDA using smoothing splines to inter
 \examples{
 ##
 vultures$POSIX <- as.POSIXct(vultures$timestamp, tz = "UTC")
-vultures_paths <- vultures[format(vultures$POSIX, "\%Y") == 2009, ]
+vultures_paths <- vultures[vultures$POSIX > as.POSIXct("2009-01-01", origin = "1970-01-01") & 
+                             vultures$POSIX < as.POSIXct("2009-04-05", origin = "1970-01-01"), ]
 animate_paths(paths = vultures_paths,
               delta.t = "month",
               coord = c("location.long", "location.lat"),
               Time.name = "POSIX",
               ID.name = "individual.local.identifier")
 \donttest{
-  background <- list(location = c(-90, 10),
-                     zoom = 3,
-                     maptype = "satellite")
-  animate_paths(paths = vultures_paths,
-                delta.t = "week",
-                coord = c("location.long", "location.lat"),
-                Time.name = "POSIX",
-                ID.name = "individual.local.identifier", 
-                background = background)
+readline("Press [enter] to continue.")
+background <- list(location = c(-90, 10),
+                   zoom = 3,
+                   maptype = "satellite")
+COVARIATE <- cos(as.numeric(vultures_paths$timestamp) / 
+                   diff(range(as.numeric(vultures_paths$timestamp))) * 4 * pi)
+animate_paths(paths = cbind(vultures_paths, COVARIATE),
+              delta.t = "week",
+              coord = c("location.long", "location.lat"),
+              Time.name = "POSIX", covariate.name = "COVARIATE", 
+              covariate.colors = RColorBrewer::brewer.pal(n = 9, "RdYlGn"),
+              ID.name = "individual.local.identifier", 
+              background = background)
 }
 }
