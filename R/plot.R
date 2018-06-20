@@ -10,6 +10,8 @@
 #' @param ylim_y y-axis limits for marginal plots (y, northing, etc.)
 #'
 #' @return NULL
+#' @rdname plot
+#' @method plot paths_animation
 #' @export
 #' @importFrom stats qnorm
 #' @importFrom graphics layout lines

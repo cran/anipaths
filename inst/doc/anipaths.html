@@ -12,7 +12,7 @@
 
 <meta name="author" content="Henry Scharf" />
 
-<meta name="date" content="2018-02-21" />
+<meta name="date" content="2018-06-20" />
 
 <title>anipaths</title>
 
@@ -268,11 +268,28 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 
 <h1 class="title toc-ignore">anipaths</h1>
 <h4 class="author"><em>Henry Scharf</em></h4>
-<h4 class="date"><em>2018-02-21</em></h4>
+<h4 class="date"><em>2018-06-20</em></h4>
 
 
+<div id="TOC">
+<ul>
+<li><a href="#animating-animal-trajectories">Animating animal trajectories</a><ul>
+<li><a href="#using-background-maps">Using background maps</a></li>
+<li><a href="#adding-individual-level-covariate-information">Adding individual-level covariate information</a></li>
+<li><a href="#animating-synchronous-data">Animating synchronous data</a></li>
+<li><a href="#output-formats">Output formats</a></li>
+</ul></li>
+<li><a href="#checking-the-interpolation">Checking the interpolation</a></li>
+<li><a href="#additional-features">Additional features</a><ul>
+<li><a href="#showing-location-uncertainty-beta">Showing location uncertainty (beta)</a></li>
+<li><a href="#showing-complete-trajectories">Showing complete trajectories</a></li>
+<li><a href="#dimming-selected-individuals">Dimming selected individuals</a></li>
+<li><a href="#showing-relational-information-beta">Showing relational information (beta)</a></li>
+</ul></li>
+</ul>
+</div>
 
-<section id="animating-animal-trajectories" class="level2">
+<div id="animating-animal-trajectories" class="section level2">
 <h2>Animating animal trajectories</h2>
 <p>The package <code>anipaths</code> contains a collection of telemetry observations for turkey vultures originally analyzed in:</p>
 <blockquote>
@@ -281,14 +298,16 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <p>To animate the locations, we first need to create a time stamp variable of class <code>numeric</code> or <code>POSIX</code>. One advantage to using the <code>POSIX</code> class is that we can specify the gaps in the interpolation (<code>delta.t</code>) using convenient character strings like <code>&quot;hour&quot;</code> or <code>&quot;week&quot;</code>.</p>
 <pre class="sourceCode r" id="cb1"><code class="sourceCode r"><div class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">library</span>(anipaths)</div>
 <div class="sourceLine" id="cb1-2" data-line-number="2">vultures<span class="op">$</span>POSIX &lt;-<span class="st"> </span><span class="kw">as.POSIXct</span>(vultures<span class="op">$</span>timestamp, <span class="dt">tz =</span> <span class="st">&quot;UTC&quot;</span>)</div>
-<div class="sourceLine" id="cb1-3" data-line-number="3">vultures_paths &lt;-<span class="st"> </span>vultures[<span class="kw">format</span>(vultures<span class="op">$</span>POSIX, <span class="st">&quot;%Y&quot;</span>) <span class="op">==</span><span class="st"> </span><span class="dv">2009</span>, ]</div>
+<div class="sourceLine" id="cb1-3" data-line-number="3">vultures_paths &lt;-<span class="st"> </span>vultures[<span class="kw">format</span>(vultures<span class="op">$</span>POSIX, <span class="st">&quot;%Y&quot;</span>) <span class="op">==</span><span class="st"> </span><span class="dv">2009</span>, ] ## limit attention to 2009</div>
 <div class="sourceLine" id="cb1-4" data-line-number="4">delta.t &lt;-<span class="st"> &quot;day&quot;</span></div>
 <div class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">animate_paths</span>(<span class="dt">paths =</span> vultures_paths, </div>
 <div class="sourceLine" id="cb1-6" data-line-number="6">              <span class="dt">delta.t =</span> delta.t,</div>
 <div class="sourceLine" id="cb1-7" data-line-number="7">              <span class="dt">coord =</span> <span class="kw">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</div>
 <div class="sourceLine" id="cb1-8" data-line-number="8">              <span class="dt">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</div>
 <div class="sourceLine" id="cb1-9" data-line-number="9">              <span class="dt">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>)</div></code></pre>
-<p>The animation isn’t much good without context, so we add a simple map. There are lots of ways to incorporate a map. The simplest way is to set <code>background</code> to <code>TRUE</code>, in which case <code>anipaths</code> will do the best it can to select a map based on the data. In the next example, we’ve changed the time step to help the animations load a little faster.</p>
+<div id="using-background-maps" class="section level3">
+<h3>Using background maps</h3>
+<p>Often it may be useful to add a map of the relevant study area. There are lots of ways to incorporate a map. The simplest way is to set <code>background</code> to <code>TRUE</code>, in which case <code>anipaths</code> will do the best it can to select a map based on the data. In the next example, we’ve changed the time step to help the animations load a little faster.</p>
 <pre class="sourceCode r" id="cb2"><code class="sourceCode r"><div class="sourceLine" id="cb2-1" data-line-number="1">delta.t &lt;-<span class="st"> &quot;week&quot;</span></div>
 <div class="sourceLine" id="cb2-2" data-line-number="2"><span class="kw">animate_paths</span>(<span class="dt">paths =</span> vultures_paths, </div>
 <div class="sourceLine" id="cb2-3" data-line-number="3">              <span class="dt">delta.t =</span> delta.t,</div>
@@ -296,7 +315,8 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <div class="sourceLine" id="cb2-5" data-line-number="5">              <span class="dt">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</div>
 <div class="sourceLine" id="cb2-6" data-line-number="6">              <span class="dt">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </div>
 <div class="sourceLine" id="cb2-7" data-line-number="7">              <span class="dt">background =</span> <span class="ot">TRUE</span>)</div></code></pre>
-<p>You can also give a long/lat <code>location</code>, <code>zoom</code> level (3-21; see <code>?ggmap::get_map()</code>), and <code>maptype</code> (<code>satellite</code>, <code>terrain</code>, <code>hybrid</code>) to be passed to <code>ggmap::get_map()</code>, and <code>anipaths</code> will make a background for you. As shown below, the value of <code>delta.t</code> can be specified as a numeric, which will be interpreted in whatever units used by <code>as.numeric(paths['Time.name'])</code> (in our case, this is seconds).</p>
+<p>You can also give a long/lat <code>location</code>, <code>zoom</code> level (3-21; see <code>?ggmap::get_map()</code>), and <code>maptype</code> (<code>satellite</code>, <code>terrain</code>, <code>hybrid</code>) to be passed to <code>ggmap::get_map()</code>, and <code>anipaths</code> will make a background for you.</p>
+<p>As shown below, the value of <code>delta.t</code> can be specified as a numeric, which will be interpreted in whatever units used by <code>as.numeric(paths['Time.name'])</code> (in our case, this is seconds).</p>
 <pre class="sourceCode r" id="cb3"><code class="sourceCode r"><div class="sourceLine" id="cb3-1" data-line-number="1">vultures_paths &lt;-<span class="st"> </span>vultures[<span class="kw">format</span>(vultures<span class="op">$</span>POSIX, <span class="st">&quot;%Y&quot;</span>) <span class="op">==</span><span class="st"> </span><span class="dv">2009</span><span class="op">:</span><span class="dv">2010</span>, ]</div>
 <div class="sourceLine" id="cb3-2" data-line-number="2">delta.t &lt;-<span class="st"> </span><span class="dv">3600</span><span class="op">*</span><span class="dv">24</span><span class="op">*</span><span class="dv">2</span> ## number of seconds in two days</div>
 <div class="sourceLine" id="cb3-3" data-line-number="3">background &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">location =</span> <span class="kw">c</span>(<span class="op">-</span><span class="dv">90</span>, <span class="dv">10</span>), </div>
@@ -308,23 +328,142 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <div class="sourceLine" id="cb3-9" data-line-number="9">              <span class="dt">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</div>
 <div class="sourceLine" id="cb3-10" data-line-number="10">              <span class="dt">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </div>
 <div class="sourceLine" id="cb3-11" data-line-number="11">              <span class="dt">background =</span> background)</div></code></pre>
-<p>Finally, you can also supply your own background image. The projection and units should match the data.</p>
+<p>You can also supply your own background image. The projection and units should match the data.</p>
 <pre class="sourceCode r" id="cb4"><code class="sourceCode r"><div class="sourceLine" id="cb4-1" data-line-number="1">delta.t &lt;-<span class="st"> &quot;week&quot;</span></div>
 <div class="sourceLine" id="cb4-2" data-line-number="2">background &lt;-<span class="st"> </span>rworldmap<span class="op">::</span><span class="kw">getMap</span>(<span class="dt">resolution =</span> <span class="st">&quot;coarse&quot;</span>)</div>
-<div class="sourceLine" id="cb4-3" data-line-number="3">sp<span class="op">::</span><span class="kw">proj4string</span>(background) ## matches default in animate_paths()</div>
+<div class="sourceLine" id="cb4-3" data-line-number="3">sp<span class="op">::</span><span class="kw">proj4string</span>(background) ## matches default projection in animate_paths()</div>
 <div class="sourceLine" id="cb4-4" data-line-number="4"><span class="kw">animate_paths</span>(<span class="dt">paths =</span> vultures_paths, </div>
 <div class="sourceLine" id="cb4-5" data-line-number="5">              <span class="dt">delta.t =</span> delta.t,</div>
 <div class="sourceLine" id="cb4-6" data-line-number="6">              <span class="dt">coord =</span> <span class="kw">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</div>
 <div class="sourceLine" id="cb4-7" data-line-number="7">              <span class="dt">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</div>
 <div class="sourceLine" id="cb4-8" data-line-number="8">              <span class="dt">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </div>
 <div class="sourceLine" id="cb4-9" data-line-number="9">              <span class="dt">background =</span> background)</div></code></pre>
-<p>The function <code>animate_paths()</code> must project the data to match Google’s map tiles, so if your data aren’t in long/lat format, make sure you update the  variable with the correct string.</p>
-<p>If you have <code>ffmpeg</code> installed on your system, you can set <code>method = &quot;mp4&quot;</code> to create a stand-alone video that is easy to share with others. For more information, see <a href="https://www.ffmpeg.org/" class="uri">https://www.ffmpeg.org/</a> for instructions.</p>
-</section>
-<section id="check-interpolation" class="level2">
-<h2>Check interpolation</h2>
+<p>The function <code>animate_paths()</code> must project the data to match Google’s map tiles, so if your data aren’t in long/lat format, make sure you update the <code>paths.proj</code> variable with the correct string.</p>
+</div>
+<div id="adding-individual-level-covariate-information" class="section level3">
+<h3>Adding individual-level covariate information</h3>
+<p>If you have a covariate of interest for each individual, <code>animate_paths()</code> can display that information as a colored ring around each individual. We don’t have any natural individual-level covariates available for the vultures, so we’ll make one up for the purposed of demonstration. The following code assigns each individual a random interval for each of three behaviors: <em>exploratory</em>, <em>directed</em>, and <em>stationary</em>.</p>
+<pre class="sourceCode r" id="cb5"><code class="sourceCode r"><div class="sourceLine" id="cb5-1" data-line-number="1">behaviors &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;exploratory&quot;</span>, <span class="st">&quot;directed&quot;</span>, <span class="st">&quot;stationary&quot;</span>)</div>
+<div class="sourceLine" id="cb5-2" data-line-number="2"><span class="kw">set.seed</span>(<span class="dv">1</span>)</div>
+<div class="sourceLine" id="cb5-3" data-line-number="3">vultures_paths<span class="op">$</span>behavior &lt;-<span class="st"> </span></div>
+<div class="sourceLine" id="cb5-4" data-line-number="4"><span class="st">  </span><span class="kw">unlist</span>(<span class="kw">sapply</span>(<span class="kw">unique</span>(vultures_paths<span class="op">$</span>individual.local.identifier), <span class="cf">function</span>(id){</div>
+<div class="sourceLine" id="cb5-5" data-line-number="5">    v_id &lt;-<span class="st"> </span>vultures_paths[vultures_paths<span class="op">$</span>individual.local.identifier <span class="op">==</span><span class="st"> </span>id, ]</div>
+<div class="sourceLine" id="cb5-6" data-line-number="6">    switches &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dv">0</span>, <span class="kw">sort</span>(<span class="kw">sample</span>(<span class="dv">1</span><span class="op">:</span><span class="kw">nrow</span>(v_id), <span class="dv">2</span>)), <span class="kw">nrow</span>(v_id))</div>
+<div class="sourceLine" id="cb5-7" data-line-number="7">    <span class="kw">rep</span>(behaviors[<span class="kw">sample</span>(<span class="dv">1</span><span class="op">:</span><span class="dv">3</span>, <span class="dv">3</span>)], <span class="kw">diff</span>(switches))</div>
+<div class="sourceLine" id="cb5-8" data-line-number="8">  }))</div></code></pre>
+<p>The covariates have now been appended to the <code>paths</code> data frame. We can let <code>animate_paths()</code> know we would like it to display this information by setting the argument <code>covariate</code> to match the name of the appropriate column in <code>paths</code> (i.e., <code>behavior</code>). The default colors are a gray scale. Any collection of colors can be provided (e.g., <code>covariate.colors = viridis::viridis(3)</code>) which will be turned into a palette to match the support of the covariate.</p>
+<pre class="sourceCode r" id="cb6"><code class="sourceCode r"><div class="sourceLine" id="cb6-1" data-line-number="1">delta.t &lt;-<span class="st"> &quot;day&quot;</span></div>
+<div class="sourceLine" id="cb6-2" data-line-number="2">background &lt;-<span class="st"> </span>rworldmap<span class="op">::</span><span class="kw">getMap</span>(<span class="dt">resolution =</span> <span class="st">&quot;coarse&quot;</span>)</div>
+<div class="sourceLine" id="cb6-3" data-line-number="3">sp<span class="op">::</span><span class="kw">proj4string</span>(background)</div>
+<div class="sourceLine" id="cb6-4" data-line-number="4"><span class="kw">animate_paths</span>(<span class="dt">paths =</span> vultures_paths, </div>
+<div class="sourceLine" id="cb6-5" data-line-number="5">              <span class="dt">delta.t =</span> delta.t,</div>
+<div class="sourceLine" id="cb6-6" data-line-number="6">              <span class="dt">coord =</span> <span class="kw">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</div>
+<div class="sourceLine" id="cb6-7" data-line-number="7">              <span class="dt">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</div>
+<div class="sourceLine" id="cb6-8" data-line-number="8">              <span class="dt">covariate =</span> <span class="st">&quot;behavior&quot;</span>, <span class="dt">covariate.colors =</span> viridis<span class="op">::</span><span class="kw">viridis</span>(<span class="dv">3</span>),</div>
+<div class="sourceLine" id="cb6-9" data-line-number="9">              <span class="dt">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>,</div>
+<div class="sourceLine" id="cb6-10" data-line-number="10">              <span class="dt">background =</span> background, <span class="dt">max.knots =</span> <span class="dv">80</span>)</div></code></pre>
+<p><em>Note</em>: if a covariate is represented numerically but should be treated as a factor, changing the class using <code>as.factor()</code> should prevent <code>animate_paths()</code> from interpolating to “intermediate” values (e.g., if male and female are coded as 0 and 1, defining the column of the data frame as a factor will constrain individuals to only take on values of 0 and 1).</p>
+</div>
+<div id="animating-synchronous-data" class="section level3">
+<h3>Animating synchronous data</h3>
+<p>This situation may arise, for example, when a user wishes to employ <code>anipaths</code> to produce visualizations of realizations generated from a discrete-time movement model. To demonstrate how to use <code>animate_paths()</code> to animate already synchronous paths, bypassing the spline-based interpolation, we can use <code>animate_paths()</code> to produce synchronized paths (setting <code>return.paths = TRUE</code>), and then pretend we had those synchronized paths from the beginning. In this case, we will also pretend we have covariates associated with those synchronized times.</p>
+<pre class="sourceCode r" id="cb7"><code class="sourceCode r"><div class="sourceLine" id="cb7-1" data-line-number="1">delta.t &lt;-<span class="st"> </span><span class="dv">3600</span><span class="op">*</span><span class="dv">24</span><span class="op">*</span><span class="dv">3</span> ## 3 days between synchronized observations</div>
+<div class="sourceLine" id="cb7-2" data-line-number="2">background &lt;-<span class="st"> </span>rworldmap<span class="op">::</span><span class="kw">getMap</span>(<span class="dt">resolution =</span> <span class="st">&quot;coarse&quot;</span>)</div>
+<div class="sourceLine" id="cb7-3" data-line-number="3">sp<span class="op">::</span><span class="kw">proj4string</span>(background)</div>
+<div class="sourceLine" id="cb7-4" data-line-number="4">behaviors &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;exploratory&quot;</span>, <span class="st">&quot;directed&quot;</span>, <span class="st">&quot;stationary&quot;</span>)</div>
+<div class="sourceLine" id="cb7-5" data-line-number="5"><span class="kw">set.seed</span>(<span class="dv">1</span>)</div>
+<div class="sourceLine" id="cb7-6" data-line-number="6">vultures_paths<span class="op">$</span>behavior &lt;-<span class="st"> </span></div>
+<div class="sourceLine" id="cb7-7" data-line-number="7"><span class="st">  </span><span class="kw">unlist</span>(<span class="kw">sapply</span>(<span class="kw">unique</span>(vultures_paths<span class="op">$</span>individual.local.identifier), <span class="cf">function</span>(id){</div>
+<div class="sourceLine" id="cb7-8" data-line-number="8">    v_id &lt;-<span class="st"> </span>vultures_paths[vultures_paths<span class="op">$</span>individual.local.identifier <span class="op">==</span><span class="st"> </span>id, ]</div>
+<div class="sourceLine" id="cb7-9" data-line-number="9">    switches &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dv">0</span>, <span class="kw">sort</span>(<span class="kw">sample</span>(<span class="dv">1</span><span class="op">:</span><span class="kw">nrow</span>(v_id), <span class="dv">2</span>)), <span class="kw">nrow</span>(v_id))</div>
+<div class="sourceLine" id="cb7-10" data-line-number="10">    <span class="kw">rep</span>(behaviors[<span class="kw">sample</span>(<span class="dv">1</span><span class="op">:</span><span class="dv">3</span>, <span class="dv">3</span>)], <span class="kw">diff</span>(switches))</div>
+<div class="sourceLine" id="cb7-11" data-line-number="11">  }))</div>
+<div class="sourceLine" id="cb7-12" data-line-number="12">synchro_paths &lt;-<span class="st"> </span><span class="kw">animate_paths</span>(<span class="dt">paths =</span> vultures_paths, <span class="dt">max.knots =</span> <span class="dv">70</span>,</div>
+<div class="sourceLine" id="cb7-13" data-line-number="13">                               <span class="dt">delta.t =</span> delta.t, <span class="dt">covariate =</span> <span class="st">&quot;behavior&quot;</span>,</div>
+<div class="sourceLine" id="cb7-14" data-line-number="14">                               <span class="dt">coord =</span> <span class="kw">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>), <span class="dt">res =</span> <span class="dv">2</span>,</div>
+<div class="sourceLine" id="cb7-15" data-line-number="15">                               <span class="dt">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>, <span class="dt">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </div>
+<div class="sourceLine" id="cb7-16" data-line-number="16">                               <span class="dt">return.paths =</span> T)</div></code></pre>
+<p>Now we input our synchronized paths (a list of matrices all with the same number of rows) into the <code>paths</code> argument, the synchronized times in the <code>times</code> argument, and the synchronized covariates in the <code>covarite</code> argument. Naming the first element of the <code>covariate</code> list passes the label through to the legend in the animation.</p>
+<pre class="sourceCode r" id="cb8"><code class="sourceCode r"><div class="sourceLine" id="cb8-1" data-line-number="1"><span class="kw">names</span>(synchro_paths<span class="op">$</span>covariate.interp) &lt;-<span class="st"> &quot;behavior&quot;</span></div>
+<div class="sourceLine" id="cb8-2" data-line-number="2"><span class="kw">animate_paths</span>(<span class="dt">paths =</span> synchro_paths<span class="op">$</span>paths.interp, <span class="dt">times =</span> synchro_paths<span class="op">$</span>times, </div>
+<div class="sourceLine" id="cb8-3" data-line-number="3">              <span class="dt">covariate =</span> synchro_paths<span class="op">$</span>covariate.interp, </div>
+<div class="sourceLine" id="cb8-4" data-line-number="4">              <span class="dt">covariate.colors =</span> <span class="dv">1</span><span class="op">:</span><span class="dv">3</span>, <span class="dt">background =</span> background)</div></code></pre>
+</div>
+<div id="output-formats" class="section level3">
+<h3>Output formats</h3>
+<p>The default format for displaying the animation is an <code>index.html</code> file. This is great for broad functionality, and the generated images may be used as the basis of a variety of other animation formats (e.g., the “animate” package in LaTeX). If you have <code>ffmpeg</code> installed on your system, you can also set <code>method = &quot;mp4&quot;</code> to create a stand-alone video that is easy to share with others. For more information, see <a href="https://www.ffmpeg.org/" class="uri">https://www.ffmpeg.org/</a>.</p>
+</div>
+</div>
+<div id="checking-the-interpolation" class="section level2">
+<h2>Checking the interpolation</h2>
 <p>As a way to check that <code>anipaths</code> is producing reasonable interpolations of the telemetry observations, a generic <code>plot()</code> function is provided that takes an argument of class <code>paths_animation</code> produced by calling <code>animate_paths()</code> with <code>return.paths = TRUE</code>. See <code>example(plot.paths_animation)</code>. Adjusting the parameters of the interpolation can be done by modifying the <code>bs</code> and <code>max.knots</code> arguments. As a general rule, if the interpolated paths look “too smooth”, try increasing <code>max.knots</code>.</p>
-</section>
+</div>
+<div id="additional-features" class="section level2">
+<h2>Additional features</h2>
+<div id="showing-location-uncertainty-beta" class="section level3">
+<h3>Showing location uncertainty (beta)</h3>
+<p>Uncertainty about the depicted location of each individual is computed as part of the interpolation procedure. Error ellipses representing a Gaussian approximation to the uncertainty can be added by specifying a quantile level for the argument <code>uncertainty.level</code>. These ellipses should really only be interpreted qualitatively, but may be useful for communicating when there is significant uncertainty about the location of an individual (perhaps due to sparse observations in time).</p>
+<pre class="sourceCode r" id="cb9"><code class="sourceCode r"><div class="sourceLine" id="cb9-1" data-line-number="1">vultures_paths &lt;-<span class="st"> </span>vultures[<span class="kw">format</span>(vultures<span class="op">$</span>POSIX, <span class="st">&quot;%Y&quot;</span>) <span class="op">==</span><span class="st"> </span><span class="dv">2009</span> <span class="op">&amp;</span><span class="st"> </span></div>
+<div class="sourceLine" id="cb9-2" data-line-number="2"><span class="st">                             </span>vultures<span class="op">$</span>location.lat <span class="op">&gt;</span><span class="st"> </span><span class="dv">32</span> <span class="op">&amp;</span><span class="st"> </span></div>
+<div class="sourceLine" id="cb9-3" data-line-number="3"><span class="st">                             </span>vultures<span class="op">$</span>individual.local.identifier <span class="op">!=</span><span class="st"> &quot;Mark&quot;</span>, ]</div>
+<div class="sourceLine" id="cb9-4" data-line-number="4">delta.t &lt;-<span class="st"> &quot;day&quot;</span></div>
+<div class="sourceLine" id="cb9-5" data-line-number="5">background &lt;-<span class="st"> </span>rworldmap<span class="op">::</span><span class="kw">getMap</span>(<span class="dt">resolution =</span> <span class="st">&quot;coarse&quot;</span>)</div>
+<div class="sourceLine" id="cb9-6" data-line-number="6">sp<span class="op">::</span><span class="kw">proj4string</span>(background) </div>
+<div class="sourceLine" id="cb9-7" data-line-number="7"><span class="kw">animate_paths</span>(<span class="dt">paths =</span> vultures_paths, </div>
+<div class="sourceLine" id="cb9-8" data-line-number="8">              <span class="dt">delta.t =</span> delta.t,</div>
+<div class="sourceLine" id="cb9-9" data-line-number="9">              <span class="dt">coord =</span> <span class="kw">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</div>
+<div class="sourceLine" id="cb9-10" data-line-number="10">              <span class="dt">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</div>
+<div class="sourceLine" id="cb9-11" data-line-number="11">              <span class="dt">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </div>
+<div class="sourceLine" id="cb9-12" data-line-number="12">              <span class="dt">background =</span> background, <span class="dt">uncertainty.level =</span> <span class="fl">0.99</span>)</div></code></pre>
+</div>
+<div id="showing-complete-trajectories" class="section level3">
+<h3>Showing complete trajectories</h3>
+<p>Set <code>whole.path = TRUE</code>. It is not required, but probably clearer visually, if we also set <code>tail.length = 0</code>.</p>
+<pre class="sourceCode r" id="cb10"><code class="sourceCode r"><div class="sourceLine" id="cb10-1" data-line-number="1"><span class="kw">animate_paths</span>(<span class="dt">paths =</span> vultures_paths, </div>
+<div class="sourceLine" id="cb10-2" data-line-number="2">              <span class="dt">delta.t =</span> delta.t,</div>
+<div class="sourceLine" id="cb10-3" data-line-number="3">              <span class="dt">coord =</span> <span class="kw">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</div>
+<div class="sourceLine" id="cb10-4" data-line-number="4">              <span class="dt">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</div>
+<div class="sourceLine" id="cb10-5" data-line-number="5">              <span class="dt">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </div>
+<div class="sourceLine" id="cb10-6" data-line-number="6">              <span class="dt">background =</span> background, </div>
+<div class="sourceLine" id="cb10-7" data-line-number="7">              <span class="dt">whole.path =</span> <span class="ot">TRUE</span>, <span class="dt">tail.length =</span> <span class="dv">0</span>)</div></code></pre>
+</div>
+<div id="dimming-selected-individuals" class="section level3">
+<h3>Dimming selected individuals</h3>
+<pre class="sourceCode r" id="cb11"><code class="sourceCode r"><div class="sourceLine" id="cb11-1" data-line-number="1">vultures_paths &lt;-<span class="st"> </span>vultures[<span class="kw">format</span>(vultures<span class="op">$</span>POSIX, <span class="st">&quot;%Y&quot;</span>) <span class="op">==</span><span class="st"> </span><span class="dv">2009</span> <span class="op">&amp;</span><span class="st"> </span></div>
+<div class="sourceLine" id="cb11-2" data-line-number="2"><span class="st">                             </span>vultures<span class="op">$</span>location.lat <span class="op">&gt;</span><span class="st"> </span><span class="dv">32</span>, ]</div>
+<div class="sourceLine" id="cb11-3" data-line-number="3"><span class="kw">animate_paths</span>(<span class="dt">paths =</span> vultures_paths, </div>
+<div class="sourceLine" id="cb11-4" data-line-number="4">              <span class="dt">delta.t =</span> delta.t,</div>
+<div class="sourceLine" id="cb11-5" data-line-number="5">              <span class="dt">coord =</span> <span class="kw">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</div>
+<div class="sourceLine" id="cb11-6" data-line-number="6">              <span class="dt">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</div>
+<div class="sourceLine" id="cb11-7" data-line-number="7">              <span class="dt">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </div>
+<div class="sourceLine" id="cb11-8" data-line-number="8">              <span class="dt">background =</span> background, <span class="dt">dimmed =</span> <span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">5</span>))</div></code></pre>
+</div>
+<div id="showing-relational-information-beta" class="section level3">
+<h3>Showing relational information (beta)</h3>
+<p>It is also possible to visualize dynamic pair-wise relational information with <code>anipaths</code>. This information needs to be coded as an array of adjacency matrices (binary and weighted edges allowed, no support yet for directed information). If the network information is on a different time scale than the position information, it will be interpolated using smoothing splines to match.</p>
+<p>We don’t have existing relationships among the vultures to display, so we’ll make some up for the purposes of demonstration.</p>
+<pre class="sourceCode r" id="cb12"><code class="sourceCode r"><div class="sourceLine" id="cb12-1" data-line-number="1">vultures_paths &lt;-<span class="st"> </span>vultures[<span class="kw">format</span>(vultures<span class="op">$</span>POSIX, <span class="st">&quot;%Y&quot;</span>) <span class="op">==</span><span class="st"> </span><span class="dv">2009</span>, ]</div>
+<div class="sourceLine" id="cb12-2" data-line-number="2"><span class="kw">set.seed</span>(<span class="dv">1</span>)</div>
+<div class="sourceLine" id="cb12-3" data-line-number="3">n_indiv &lt;-<span class="st"> </span><span class="kw">length</span>(<span class="kw">unique</span>(vultures_paths<span class="op">$</span>individual.local.identifier))</div>
+<div class="sourceLine" id="cb12-4" data-line-number="4">change_pts &lt;-<span class="st"> </span><span class="dv">5</span></div>
+<div class="sourceLine" id="cb12-5" data-line-number="5">network_times &lt;-<span class="st"> </span><span class="kw">seq</span>(<span class="kw">min</span>(vultures_paths<span class="op">$</span>POSIX), <span class="kw">max</span>(vultures_paths<span class="op">$</span>POSIX), <span class="dt">l =</span> change_pts <span class="op">+</span><span class="st"> </span><span class="dv">2</span>)</div>
+<div class="sourceLine" id="cb12-6" data-line-number="6">network &lt;-<span class="st"> </span><span class="kw">array</span>(<span class="ot">NA</span>, <span class="dt">dim =</span> <span class="kw">c</span>(n_indiv, n_indiv, <span class="kw">length</span>(network_times)))</div>
+<div class="sourceLine" id="cb12-7" data-line-number="7"><span class="cf">for</span>(time_i <span class="cf">in</span> <span class="dv">2</span><span class="op">:</span><span class="kw">length</span>(network_times)){</div>
+<div class="sourceLine" id="cb12-8" data-line-number="8">  network_mat &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">sample</span>(<span class="dv">1</span><span class="op">:</span><span class="dv">0</span>, n_indiv<span class="op">^</span><span class="dv">2</span>, <span class="dt">prob =</span> <span class="kw">c</span>(<span class="fl">0.1</span>, <span class="fl">0.9</span>), <span class="dt">replace =</span> T), </div>
+<div class="sourceLine" id="cb12-9" data-line-number="9">                        n_indiv, n_indiv)</div>
+<div class="sourceLine" id="cb12-10" data-line-number="10">  network_mat[<span class="kw">lower.tri</span>(network_mat)] &lt;-<span class="st"> </span><span class="kw">t</span>(network_mat)[<span class="kw">lower.tri</span>(network_mat)]</div>
+<div class="sourceLine" id="cb12-11" data-line-number="11">  <span class="kw">diag</span>(network_mat) &lt;-<span class="st"> </span><span class="dv">1</span></div>
+<div class="sourceLine" id="cb12-12" data-line-number="12">  network[, , (time_i <span class="op">-</span><span class="st"> </span><span class="dv">1</span>)<span class="op">:</span>time_i] &lt;-<span class="st"> </span>network_mat</div>
+<div class="sourceLine" id="cb12-13" data-line-number="13">}</div></code></pre>
+<pre class="sourceCode r" id="cb13"><code class="sourceCode r"><div class="sourceLine" id="cb13-1" data-line-number="1">delta.t &lt;-<span class="st"> </span><span class="dv">3600</span><span class="op">*</span><span class="dv">24</span><span class="op">*</span><span class="dv">2</span></div>
+<div class="sourceLine" id="cb13-2" data-line-number="2"><span class="kw">animate_paths</span>(<span class="dt">paths =</span> vultures_paths, </div>
+<div class="sourceLine" id="cb13-3" data-line-number="3">              <span class="dt">delta.t =</span> delta.t,</div>
+<div class="sourceLine" id="cb13-4" data-line-number="4">              <span class="dt">coord =</span> <span class="kw">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</div>
+<div class="sourceLine" id="cb13-5" data-line-number="5">              <span class="dt">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</div>
+<div class="sourceLine" id="cb13-6" data-line-number="6">              <span class="dt">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, <span class="dt">max.knots =</span> <span class="dv">50</span>,</div>
+<div class="sourceLine" id="cb13-7" data-line-number="7">              <span class="dt">background =</span> background, <span class="dt">network =</span> network, <span class="dt">network.times =</span> network_times)</div></code></pre>
+</div>
+</div>
 
 
 
