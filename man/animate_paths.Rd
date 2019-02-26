@@ -9,10 +9,13 @@ animate_paths(paths, times = NULL, delta.t = NULL, n.frames = NULL,
   Time.name = "time", ID.name = NULL, whole.path = FALSE,
   covariate = NULL, covariate.colors = c("black", "white"),
   covariate.thresh = NULL, covariate.legend.loc = "bottomright",
-  par.opts = list(), background = NULL, bg.axes = TRUE, bg.opts = NULL,
-  method = "html", pt.colors = NULL, dimmed = NULL, res = 1.5,
-  plot.date = TRUE, legend.loc = "topright", network = NULL,
+  par.opts = list(), dev.opts = list(), background = NULL,
+  bg.axes = TRUE, bg.opts = NULL, bg.misc = NULL, method = "html",
+  pt.colors = NULL, dimmed = NULL, res = 1.5, plot.date = TRUE,
+  date.col = "black", legend.loc = "topright", network = NULL,
   network.times = NULL, network.thresh = 0.5, network.colors = NULL,
+  network.ring.wt = 3, network.ring.trans = 1,
+  network.segment.wt = 3, network.segment.trans = 0.5,
   tail.length = 5, xlim = NULL, ylim = NULL, main = NULL,
   bs = "'tp', fx=T", max.knots = NULL, uncertainty.level = NA,
   override = FALSE, return.paths = FALSE, ...)
@@ -49,11 +52,15 @@ If all paths are already synchornous, another option for passing the data is to 
 
 \item{par.opts}{Options passed to \code{par()} before creating each frame.}
 
+\item{dev.opts}{Options passed to \code{png()} before creating each frame.}
+
 \item{background}{Three possibilities: (1) A single background image over which animation will be overlayed, or a list of images corresponding to each frame. (2) A list with values \code{location} (long/lat), \code{zoom}, and \code{maptype} (see \code{ggmap::get_map()}) which will be used to generate a background for the animation based on Google maps tiles. Additional arguments may be added which will be passed to \code{ggmap::get_map()}. (3) A logical value of \code{TRUE}, which will cue the function to get the best Google Map tile combination it can come up with. Note: \code{ggmap} must be installed for (2) and (3). Note: if you are calling \code{animate_paths()} several times in a short period of time you may get an error from Google for trying to pull tiles too often (e.g., \code{Error in download.file(url, destfile = tmp, quiet = !messaging, mode = "wb") : cannot open URL 'http://maps.googleapis...'}). Waiting a minute or so usually solves this.}
 
 \item{bg.axes}{logical: should animation place axis labels when using a background image (default is \code{TRUE}). If \code{RGoogleMaps} is used to produce background, labels will be "northing" and "easting". Otherwise, the strings given to \code{coord} will be used.}
 
 \item{bg.opts}{Options passed to \code{plot()} function call that makes background in each frame. For example, this could be used to specify blue ocean and gray landcover if \code{background} is a \code{SpatialPolygonsDataFrame} and \code{bg.opts = list(bg = "dodgerblue4", col = "gray", border = "gray")}.}
+
+\item{bg.misc}{Character string which will be executed as \code{R} code after generating the background, and before adding trajectories, etc.}
 
 \item{method}{either \code{"html"} (default) or \code{"mp4"}. The latter requires the user has installed \code{ffmpeg} (see \code{?animation::saveVideo()}).}
 
@@ -65,6 +72,8 @@ If all paths are already synchornous, another option for passing the data is to 
 
 \item{plot.date}{Logical variable toggling date text at the time center of the animation.}
 
+\item{date.col}{default is \code{"black"}}
+
 \item{legend.loc}{passed to first argument of \code{legend()} function. Default is \code{"topright"}. \code{NA} removes legend.}
 
 \item{network}{Array of dimensions (# individuals, # individuals, \code{n.frames}) that gives a dyanmic network structure among the individuals.}
@@ -74,6 +83,14 @@ If all paths are already synchornous, another option for passing the data is to 
 \item{network.thresh}{Network structure is summarized in the animation in a binary way, regardless of whether or not the \code{network} is continuously weighted or not. The value of \code{network.thresh} determines the level below which no connection is shown, and above which an active connection is shown via colored rings and connecting segments.}
 
 \item{network.colors}{A symmetric matrix of dimension \code{length(paths)} \eqn{\times} \code{length(paths)} giving the colors associated with each pairwise relationship.}
+
+\item{network.ring.wt}{thickness of network rings (default is 3)}
+
+\item{network.ring.trans}{transparency of network segments (default is 1)}
+
+\item{network.segment.wt}{thickness of network segments (default is 3)}
+
+\item{network.segment.trans}{transparency of network segments (default is 0.5)}
 
 \item{tail.length}{Length of the tail trailing each individual.}
 

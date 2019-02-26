@@ -27,6 +27,7 @@
 #' @param covariate.thresh if changed from its default value of \code{NULL}, the interpolated value of the covariate will be binarized based on this numeric value.
 #' @param covariate.legend.loc either the location of the covariate legend, or \code{NA} if no legend is desired
 #' @param par.opts Options passed to \code{par()} before creating each frame.
+#' @param dev.opts Options passed to \code{png()} before creating each frame.
 #' @param background Three possibilities: (1) A single background image over which animation will be overlayed, or a list of images corresponding to each frame. (2) A list with values \code{location} (long/lat), \code{zoom}, and \code{maptype} (see \code{ggmap::get_map()}) which will be used to generate a background for the animation based on Google maps tiles. Additional arguments may be added which will be passed to \code{ggmap::get_map()}. (3) A logical value of \code{TRUE}, which will cue the function to get the best Google Map tile combination it can come up with. Note: \code{ggmap} must be installed for (2) and (3). Note: if you are calling \code{animate_paths()} several times in a short period of time you may get an error from Google for trying to pull tiles too often (e.g., \code{Error in download.file(url, destfile = tmp, quiet = !messaging, mode = "wb") : cannot open URL 'http://maps.googleapis...'}). Waiting a minute or so usually solves this.
 #' @param bg.axes logical: should animation place axis labels when using a background image (default is \code{TRUE}). If \code{RGoogleMaps} is used to produce background, labels will be "northing" and "easting". Otherwise, the strings given to \code{coord} will be used.
 #' @param method either \code{"html"} (default) or \code{"mp4"}. The latter requires the user has installed \code{ffmpeg} (see \code{?animation::saveVideo()}).
@@ -36,13 +37,19 @@
 #' @param network.times Numeric vector. If network time grid doesn't match \code{n.frames}, supply the times at which the network has been evaluated so it can be interpolated using smoothing splines.
 #' @param network.thresh Network structure is summarized in the animation in a binary way, regardless of whether or not the \code{network} is continuously weighted or not. The value of \code{network.thresh} determines the level below which no connection is shown, and above which an active connection is shown via colored rings and connecting segments.
 #' @param network.colors A symmetric matrix of dimension \code{length(paths)} \eqn{\times} \code{length(paths)} giving the colors associated with each pairwise relationship.
+#' @param network.ring.wt thickness of network rings (default is 3)
+#' @param network.ring.trans transparency of network segments (default is 1)
+#' @param network.segment.wt thickness of network segments (default is 3)
+#' @param network.segment.trans transparency of network segments (default is 0.5)
 #' @param plot.date Logical variable toggling date text at the time center of the animation.
+#' @param date.col default is \code{"black"}
 #' @param legend.loc passed to first argument of \code{legend()} function. Default is \code{"topright"}. \code{NA} removes legend.
 #' @param tail.length Length of the tail trailing each individual.
 #' @param xlim Boundaries for plotting. If left undefined, the range of the data will be used.
 #' @param ylim Boundaries for plotting. If left undefined, the range of the data will be used.
 #' @param main Title for each frame. SOON: support for changing titles to allow for, say, dates.
 #' @param bg.opts Options passed to \code{plot()} function call that makes background in each frame. For example, this could be used to specify blue ocean and gray landcover if \code{background} is a \code{SpatialPolygonsDataFrame} and \code{bg.opts = list(bg = "dodgerblue4", col = "gray", border = "gray")}.
+#' @param bg.misc Character string which will be executed as \code{R} code after generating the background, and before adding trajectories, etc.
 #' @param res Resolution of images in animation. Increase this for higher quality (and larger) images.
 #' @param override Logical variable toggling where or not to override warnings about how long the animation procedure will take.
 #' @param bs default is \code{"'tp'"} (thin plate splines), but this can be any spline basis supported by \code{s()} in the \code{mgcv} package.
@@ -88,10 +95,14 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
                           paths.proj = "+proj=longlat", coord = c("x", "y"), Time.name = "time", 
                           ID.name = NULL, whole.path = FALSE, 
                           covariate = NULL, covariate.colors = c("black", "white"), 
-                          covariate.thresh = NULL, covariate.legend.loc = "bottomright", par.opts = list(),
-                          background = NULL, bg.axes = TRUE, bg.opts = NULL, method = "html",
-                          pt.colors = NULL, dimmed = NULL, res = 1.5, plot.date = TRUE, legend.loc = "topright",
-                          network = NULL, network.times = NULL, network.thresh = 0.5, network.colors = NULL,
+                          covariate.thresh = NULL, covariate.legend.loc = "bottomright", 
+                          par.opts = list(), dev.opts = list(),
+                          background = NULL, bg.axes = TRUE, bg.opts = NULL, bg.misc = NULL, 
+                          method = "html", pt.colors = NULL, dimmed = NULL, res = 1.5, 
+                          plot.date = TRUE, date.col = "black", legend.loc = "topright",
+                          network = NULL, network.times = NULL, network.thresh = 0.5, 
+                          network.colors = NULL, network.ring.wt = 3, network.ring.trans = 1, 
+                          network.segment.wt = 3, network.segment.trans = 0.5, 
                           tail.length = 5, xlim = NULL, ylim = NULL, main = NULL,
                           bs = "'tp', fx=T", max.knots = NULL, uncertainty.level = NA,
                           override = FALSE, return.paths = FALSE, ...){
@@ -147,6 +158,8 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
       } else {
         covariate.factors <- levels(as.factor(covariate.interp[[1]]))
       }
+      covariate.ticks <- pretty(unlist(lapply(covariate.interp, range, na.rm = T)))
+      covariate.range <- range(covariate.ticks)
     }
   }
   n.indiv <- length(paths)
@@ -160,6 +173,7 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
       Time.name <- "time"
       return(df)
     })
+    time.grid <- times
   }
   if(!is.null(delta.t)){
     time.grid <- seq(time.range[1], time.range[2], by = delta.t)
@@ -167,8 +181,10 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
   if(is.null(delta.t)){
     if(is.null(n.frames)){
       if(!is.null(times)){
-        delta.t <- mean(diff(times))
-        time.grid <- times
+        if(!exists("time.grid")){
+          delta.t <- mean(diff(times))
+          time.grid <- times
+        }
       } else {
         stop("One of 'delta.t,' 'n.frames,' or 'times' must be supplied.")
       }
@@ -305,6 +321,10 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
     return(paths_animation)
   }
   ## make list of background images for each frame ----
+  if((isTRUE(background) || sum(names(background) %in% c("location", "zoom", "maptype")) == 3) & 
+     is.null(getOption("ggmap"))){
+    stop("Google maps now requires an API key. Once you have registered an account with Google here (https://cloud.google.com/maps-platform/), you can provide the API key via the ggmap function register_google(key = 'YOUR_API_KEY'). This requires users update ggmap to the most recent release of ggmap (3.0.0) and load the ggmap package using library(ggmap) before registering their key. This must be done for each new instance of R, or else library(ggmap); register_google(key = 'YOUR_API_KEY') may be added to the user's .Rprofile.")
+  }
   if(isTRUE(background)){
     bounding_boxes <- matrix(unlist(lapply(paths.interp, function(x){
       apply(x[, 1:2], 2, range, na.rm = T)})), nrow = 4)
@@ -384,8 +404,11 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
   ## network colors ----
   if(!is.null(network)){
     cliques <- get.network.colors(binary.network = network > network.thresh)
+    if(!is.null(network.colors)){
+      cliques <- get.network.colors(binary.network = network > network.thresh, network.colors)
+    }
     # if(is.null(network.colors)){
-    #   network.colors <- matrix("wheat3", length(paths), length(paths))
+    #   network.colors <- matrix("wheat4", length(paths), length(paths))
     #   for(t in 1:dim(network)[3]){
     #     cliques.t <- igraph::max_cliques(graph_from_adjacency_matrix(network[, , t] > network.thresh, 
     #                                                                 mode = "undirected", diag = F, min = 2))
@@ -461,8 +484,9 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
     animation::saveHTML(expr = {
       for(frame in 1:n.frames){
         ## device ----
-        png(filename = sprintf(ani.options('img.fmt'), frame), 
-            width = ani.options('ani.width'), height = ani.options('ani.height'))
+        do.call(png, c(list(filename = sprintf(ani.options('img.fmt'), frame), 
+                            width = ani.options('ani.width'), height = ani.options('ani.height')), 
+                       dev.opts))
         ## set par options ----
         do.call(par, par.opts)
         ## add background ----
@@ -491,6 +515,9 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
             mtext(text = coord[2], side = 2, line = 2.6)
           }
         }
+        if(!is.null(bg.misc)){
+          eval(parse(text=bg.misc))
+        }
         ## whole path ----
         if(isTRUE(whole.path)){
           for(id in 1:length(paths)){
@@ -517,8 +544,8 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
                            y0 = paths.interp[[id]][frame, 2],
                            x1 = paths.interp[[id2]][frame, 1],
                            y1 = paths.interp[[id2]][frame, 2],
-                           col = scales::alpha(cliques$colors[[frame]][cl], 0.5),
-                           lwd = 3*res)
+                           col = scales::alpha(cliques$colors[[frame]][cl], network.segment.trans),
+                           lwd = network.segment.wt*res)
                 }
               }
             }
@@ -573,8 +600,8 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
               for(id in as.numeric(cliques$cliques[[frame]][[cl]])){
                 for(id2 in (1:length(paths))[-id]){
                   points(matrix(paths.interp[[id]][frame, 1:2], ncol = 2),
-                         col = scales::alpha(colour = cliques$colors[[frame]][cl], 1),
-                         cex = radius[id], lwd = 3*res)
+                         col = scales::alpha(colour = cliques$colors[[frame]][cl], network.ring.trans),
+                         cex = radius[id], lwd = network.ring.wt*res)
                 }
                 radius[id] <- radius[id] + 0.85*res*(network[id, id2, frame] > network.thresh)
               }
@@ -621,9 +648,9 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
         if(plot.date){
           if("POSIXt" %in% class(time.grid[frame])){
             # mtext(text = as.Date(time.grid[frame]), side = 3, line = -3, cex = res)
-            mtext(text = (time.grid[frame]), side = 3, line = -3, cex = res)
+            mtext(text = (time.grid[frame]), side = 3, line = -3, cex = res, col = date.col)
           } else {
-            mtext(text = signif(time.grid[frame], 6), side = 3, line = -3, cex = res)
+            mtext(text = signif(time.grid[frame], 6), side = 3, line = -3, cex = res, col = date.col)
           }
         }
         ## timing ----
@@ -671,6 +698,9 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
             mtext(text = coord[2], side = 2, line = 2.6)
           }
         }
+        if(!is.null(bg.misc)){
+          eval(parse(text=bg.misc))
+        }
         ## whole path ----
         if(isTRUE(whole.path)){
           for(id in 1:length(paths)){
@@ -697,8 +727,8 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
                            y0 = paths.interp[[id]][frame, 2],
                            x1 = paths.interp[[id2]][frame, 1],
                            y1 = paths.interp[[id2]][frame, 2],
-                           col = scales::alpha(cliques$colors[[frame]][cl], 0.5),
-                           lwd = 3*res)
+                           col = scales::alpha(cliques$colors[[frame]][cl], network.segment.trans),
+                           lwd = network.segment.wt*res)
                 }
               }
             }
@@ -753,8 +783,8 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
               for(id in as.numeric(cliques$cliques[[frame]][[cl]])){
                 for(id2 in (1:length(paths))[-id]){
                   points(matrix(paths.interp[[id]][frame, 1:2], ncol = 2),
-                         col = scales::alpha(colour = cliques$colors[[frame]][cl], 1),
-                         cex = radius[id], lwd = 3*res)
+                         col = scales::alpha(colour = cliques$colors[[frame]][cl], network.ring.trans),
+                         cex = radius[id], lwd = network.ring.wt*res)
                 }
                 radius[id] <- radius[id] + 0.85*res*(network[id, id2, frame] > network.thresh)
               }
@@ -801,9 +831,9 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
         if(plot.date){
           if("POSIXt" %in% class(time.grid[frame])){
             # mtext(text = as.Date(time.grid[frame]), side = 3, line = -3, cex = res)
-            mtext(text = (time.grid[frame]), side = 3, line = -3, cex = res)
+            mtext(text = (time.grid[frame]), side = 3, line = -3, cex = res, col = date.col)
           } else {
-            mtext(text = signif(time.grid[frame], 6), side = 3, line = -3, cex = res)
+            mtext(text = signif(time.grid[frame], 6), side = 3, line = -3, cex = res, col = date.col)
           }
         }
         ## timing ----
@@ -831,10 +861,11 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
   #' Finds all maximal cliques in the network at each time point and tries to assign them a useful coloring
   #'
   #' @param binary.network a 3D array giving the time-varying adjecency matrix of a dynamic network.
+  #' @param network.color.options vector of colors
   #'
   #' @return a list of two elements: a list of the maximal cliques at each time, and c list with colors for each clique at each time 
   #' @export
-  get.network.colors <- function(binary.network){
+  get.network.colors <- function(binary.network, network.color.options = NULL){
     ## unique cliques ----
     cliques <- sapply(1:dim(binary.network)[3], function(t){
       rev(lapply(igraph::max_cliques(igraph::graph_from_adjacency_matrix(binary.network[, , t], 
@@ -845,24 +876,26 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
     for(t in (1:dim(binary.network)[3])[which(clique.lengths > 0)]){
       unique.cliques <- unique(c(unique.cliques, cliques[[t]]))
     }
-    network.color.options <- unique(c(RColorBrewer::brewer.pal(8, "Dark2"),
-                                      RColorBrewer::brewer.pal(9, "GnBu")[3:9],
-                                      RColorBrewer::brewer.pal(9, "OrRd")[3:9],
-                                      RColorBrewer::brewer.pal(9, "BuPu")[3:9],
-                                      RColorBrewer::brewer.pal(9, "YlGn")[3:9],
-                                      RColorBrewer::brewer.pal(9, "PuBu")[3:9],
-                                      RColorBrewer::brewer.pal(9, "YlOrBr")[3:9],
-                                      RColorBrewer::brewer.pal(9, "YlGnBu")[3:9],
-                                      RColorBrewer::brewer.pal(9, "PuRd")[3:9],
-                                      RColorBrewer::brewer.pal(9, "PuBuGn")[3:9],
-                                      RColorBrewer::brewer.pal(9, "Purples")[3:9],
-                                      RColorBrewer::brewer.pal(9, "Oranges")[3:9]))
+    if(is.null(network.color.options)){
+      network.color.options <- unique(c(RColorBrewer::brewer.pal(8, "Dark2"),
+                                        RColorBrewer::brewer.pal(9, "GnBu")[3:9],
+                                        RColorBrewer::brewer.pal(9, "OrRd")[3:9],
+                                        RColorBrewer::brewer.pal(9, "BuPu")[3:9],
+                                        RColorBrewer::brewer.pal(9, "YlGn")[3:9],
+                                        RColorBrewer::brewer.pal(9, "PuBu")[3:9],
+                                        RColorBrewer::brewer.pal(9, "YlOrBr")[3:9],
+                                        RColorBrewer::brewer.pal(9, "YlGnBu")[3:9],
+                                        RColorBrewer::brewer.pal(9, "PuRd")[3:9],
+                                        RColorBrewer::brewer.pal(9, "PuBuGn")[3:9],
+                                        RColorBrewer::brewer.pal(9, "Purples")[3:9],
+                                        RColorBrewer::brewer.pal(9, "Oranges")[3:9]))
+    }
     if(length(unique.cliques) > length(network.color.options)){
       network.color.options <- c(network.color.options, 
-                                 rep("wheat3", length(unique.cliques) - length(network.color.options)))
+                                 rep("wheat4", length(unique.cliques) - length(network.color.options)))
     }
     available.colors <- network.color.options
-    clique.colors <-vector("list", dim(binary.network)[3])
+    clique.colors <- vector("list", dim(binary.network)[3])
     ## paint network ----
     for(t in (1:dim(binary.network)[3])){
       if(t == 1){
@@ -871,8 +904,7 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
           clique.colors[[1]][c] <- available.colors[1]
           available.colors <- available.colors[-1]
         }
-      }
-      else {
+      } else {
         if(clique.lengths[t] == 0){
           cliques[[t]] <- NA
           clique.colors[[t]] <- NA
@@ -904,8 +936,8 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
                 clique.colors[[t]][c] <- available.colors[1]
                 available.colors <- available.colors[-1]
               } else {
-                ## if I ran out of colors, use "wheat3"
-                clique.colors[[t]][c] <- "wheat3"
+                ## if I ran out of colors, use network.color.options[1]
+                clique.colors[[t]][c] <- network.color.options[1]
               }
             }
           }

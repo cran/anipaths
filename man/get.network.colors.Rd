@@ -5,10 +5,12 @@
 \title{get.network.colors()
 Finds all maximal cliques in the network at each time point and tries to assign them a useful coloring}
 \usage{
-get.network.colors(binary.network)
+get.network.colors(binary.network, network.color.options = NULL)
 }
 \arguments{
 \item{binary.network}{a 3D array giving the time-varying adjecency matrix of a dynamic network.}
+
+\item{network.color.options}{vector of colors}
 }
 \value{
 a list of two elements: a list of the maximal cliques at each time, and c list with colors for each clique at each time

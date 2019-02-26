@@ -1,0 +1,12 @@
+anipaths v0.9.7 (Release date: 2019-01-31)
+==============
+
+Changes:
+
+* Now able to specify single network color through 'network.colors' argument. Other functionality not yet added.
+
+* New argument 'bg.misc' allows for extra flexibilty in background images by inserting code snippets between background generation and locations/network connections.
+
+* Now able to specify color for date text ('date.col')
+
+* Error lets users know they now need to register with Google to use map tiles, and shows how to use ggmap::register_google() to input their key.
