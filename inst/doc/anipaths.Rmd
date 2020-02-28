@@ -7,7 +7,7 @@ output:
     fig_caption: yes
     toc: true
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteIndexEntry{anipaths}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -127,12 +127,12 @@ vultures_paths$behavior <-
   }))
 synchro_paths <- animate_paths(paths = vultures_paths, max.knots = 70,
                                delta.t = delta.t, covariate = "behavior",
-                               coord = c("location.long", "location.lat"), res = 2,
+                               coord = c("location.long", "location.lat"),
                                Time.name = "POSIX", ID.name = "individual.local.identifier", 
                                return.paths = T)
 ```
 
-Now we input our synchronized paths (a list of matrices all with the same number of rows) into the `paths` argument, the synchronized times in the `times` argument, and the synchronized covariates in the `covarite` argument. Naming the first element of the `covariate` list passes the label through to the legend in the animation.
+Now we input our synchronized paths (a list of matrices all with the same number of rows) into the `paths` argument, the synchronized times in the `times` argument, and the synchronized covariates in the `covariate` argument. Naming the first element of the `covariate` list passes the label through to the legend in the animation.
 
 ```{r animate_sync_covariates, eval = F}
 names(synchro_paths$covariate.interp) <- "behavior"

@@ -78,7 +78,7 @@
 #    }))
 #  synchro_paths <- animate_paths(paths = vultures_paths, max.knots = 70,
 #                                 delta.t = delta.t, covariate = "behavior",
-#                                 coord = c("location.long", "location.lat"), res = 2,
+#                                 coord = c("location.long", "location.lat"),
 #                                 Time.name = "POSIX", ID.name = "individual.local.identifier",
 #                                 return.paths = T)
 

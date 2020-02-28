@@ -28,9 +28,10 @@
 #' @param covariate.legend.loc either the location of the covariate legend, or \code{NA} if no legend is desired
 #' @param par.opts Options passed to \code{par()} before creating each frame.
 #' @param dev.opts Options passed to \code{png()} before creating each frame.
-#' @param background Three possibilities: (1) A single background image over which animation will be overlayed, or a list of images corresponding to each frame. (2) A list with values \code{location} (long/lat), \code{zoom}, and \code{maptype} (see \code{ggmap::get_map()}) which will be used to generate a background for the animation based on Google maps tiles. Additional arguments may be added which will be passed to \code{ggmap::get_map()}. (3) A logical value of \code{TRUE}, which will cue the function to get the best Google Map tile combination it can come up with. Note: \code{ggmap} must be installed for (2) and (3). Note: if you are calling \code{animate_paths()} several times in a short period of time you may get an error from Google for trying to pull tiles too often (e.g., \code{Error in download.file(url, destfile = tmp, quiet = !messaging, mode = "wb") : cannot open URL 'http://maps.googleapis...'}). Waiting a minute or so usually solves this.
+#' @param background Three possibilities: (1) A single background image over which animation will be overlayed, or a list/stack of images/rasters corresponding to each frame. (2) A list with values \code{center} (long/lat), \code{zoom}, and \code{maptype} (see \code{ggmap::get_googlemap()}) which will be used to generate a background for the animation based on Google maps tiles. Additional arguments may be added which will be passed to \code{ggmap::get_googlemap()}. (3) A logical value of \code{TRUE}, which will cue the function to get the best Google Map tile combination it can come up with. Note: \code{ggmap} must be installed for (2) and (3). Note: if you are calling \code{animate_paths()} several times in a short period of time you may get an error from Google for trying to pull tiles too often (e.g., \code{Error in download.file(url, destfile = tmp, quiet = !messaging, mode = "wb") : cannot open URL 'http://maps.googleapis...'}). Waiting a minute or so usually solves this.
 #' @param bg.axes logical: should animation place axis labels when using a background image (default is \code{TRUE}). If \code{RGoogleMaps} is used to produce background, labels will be "northing" and "easting". Otherwise, the strings given to \code{coord} will be used.
 #' @param method either \code{"html"} (default) or \code{"mp4"}. The latter requires the user has installed \code{ffmpeg} (see \code{?animation::saveVideo()}).
+#' @param pt.cex A numeric value giving the character expansion (size) of the points for each individual. Default is 1.
 #' @param pt.colors A vector of colors to be used for each individual in the animation. Default values come from Color Brewer palettes. When a network is provided, this is ignored and individuals are all colored black. If \code{NA}, no plot colors are chosen to distinguish individuals. This can be useful when making animations involving a covariate. Consider also setting \code{legend.loc} to \code{NA} in this case.
 #' @param dimmed Numeric vector of individuals to "dim" in the animation. Order corresponds to the order of the ID.name variable, or order of paths list.
 #' @param network Array of dimensions (# individuals, # individuals, \code{n.frames}) that gives a dyanmic network structure among the individuals. 
@@ -44,7 +45,9 @@
 #' @param plot.date Logical variable toggling date text at the time center of the animation.
 #' @param date.col default is \code{"black"}
 #' @param legend.loc passed to first argument of \code{legend()} function. Default is \code{"topright"}. \code{NA} removes legend.
+#' @param tail.wd Thickness of tail trailing behind each individual. Default is 1.
 #' @param tail.length Length of the tail trailing each individual.
+#' @param tail.colors default is "gray87". Can be single color or vector of colors.
 #' @param xlim Boundaries for plotting. If left undefined, the range of the data will be used.
 #' @param ylim Boundaries for plotting. If left undefined, the range of the data will be used.
 #' @param main Title for each frame. SOON: support for changing titles to allow for, say, dates.
@@ -66,6 +69,8 @@
 #' @importFrom graphics par plot mtext axis segments points legend
 #' @importFrom sp CRS spTransform coordnames coordinates plot proj4string
 #' @importFrom grDevices png dev.off
+#' @importFrom ggmap get_googlemap
+#' @importFrom raster nlayers
 #' 
 #' @examples ##
 #' vultures$POSIX <- as.POSIXct(vultures$timestamp, tz = "UTC")
@@ -76,9 +81,9 @@
 #'               coord = c("location.long", "location.lat"),
 #'               Time.name = "POSIX",
 #'               ID.name = "individual.local.identifier")
+#' system("rm -r js; rm -r css; rm -r images; rm index.html")
 #' \donttest{
-#' readline("Press [enter] to continue.")
-#' background <- list(location = c(-90, 10),
+#' background <- list(center = c(-90, 10),
 #'                    zoom = 3,
 #'                    maptype = "satellite")
 #' COVARIATE <- cos(as.numeric(vultures_paths$timestamp) / 
@@ -98,12 +103,12 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
                           covariate.thresh = NULL, covariate.legend.loc = "bottomright", 
                           par.opts = list(), dev.opts = list(),
                           background = NULL, bg.axes = TRUE, bg.opts = NULL, bg.misc = NULL, 
-                          method = "html", pt.colors = NULL, dimmed = NULL, res = 1.5, 
+                          method = "html", pt.cex = 1, pt.colors = NULL, dimmed = NULL, res = 1.5, 
                           plot.date = TRUE, date.col = "black", legend.loc = "topright",
                           network = NULL, network.times = NULL, network.thresh = 0.5, 
                           network.colors = NULL, network.ring.wt = 3, network.ring.trans = 1, 
                           network.segment.wt = 3, network.segment.trans = 0.5, 
-                          tail.length = 5, xlim = NULL, ylim = NULL, main = NULL,
+                          tail.wd = 1, tail.length = 5, tail.colors = "gray87", xlim = NULL, ylim = NULL, main = NULL,
                           bs = "'tp', fx=T", max.knots = NULL, uncertainty.level = NA,
                           override = FALSE, return.paths = FALSE, ...){
   ## SpatialPointsDataFrame ----
@@ -321,7 +326,7 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
     return(paths_animation)
   }
   ## make list of background images for each frame ----
-  if((isTRUE(background) || sum(names(background) %in% c("location", "zoom", "maptype")) == 3) & 
+  if((isTRUE(background) || sum(names(background) %in% c("center", "zoom", "maptype")) == 3) & 
      is.null(getOption("ggmap"))){
     stop("Google maps now requires an API key. Once you have registered an account with Google here (https://cloud.google.com/maps-platform/), you can provide the API key via the ggmap function register_google(key = 'YOUR_API_KEY'). This requires users update ggmap to the most recent release of ggmap (3.0.0) and load the ggmap package using library(ggmap) before registering their key. This must be done for each new instance of R, or else library(ggmap); register_google(key = 'YOUR_API_KEY') may be added to the user's .Rprofile.")
   }
@@ -348,17 +353,17 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
     }
     url <- tryCatch(
       expr = {
-        ggmap::get_map(location = c(t(bounding_box)), maptype = "terrain", urlonly = T)
+        get_googlemap(center = c(t(bounding_box)), maptype = "terrain", urlonly = T)
       }, 
       error = function(e) {
-        ggmap::get_map(location = center, zoom = 3, maptype = "terrain", urlonly = T)
+        get_googlemap(center = center, zoom = 3, maptype = "terrain", urlonly = T)
       }
     )
     zoom <- as.numeric(substr(x = url, regexpr("zoom=", url)[1] + 5, regexpr("size=", url)[1] - 2)) - 1
-    background <- list("location" = center, "zoom" = zoom, "maptype" = "hybrid")
+    background <- list("center" = center, "zoom" = zoom, "maptype" = "hybrid")
   }
-  if(sum(names(background) %in% c("location", "zoom", "maptype")) == 3){
-    background <- do.call(what = ggmap::get_map, args = background)
+  if(sum(names(background) %in% c("center", "zoom", "maptype")) == 3){
+    background <- do.call(what = get_googlemap, args = background)
   }
   if(length(background) == 1 || !(class(background) == "list")){
     if(!class(background)[1] == "list"){
@@ -368,6 +373,11 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
   }
   if(length(background) == n.frames){
     bg <- background
+  } 
+  if(inherits(background, "RasterStack")){
+    if(nlayers(background) == n.frames){
+      bg <- background
+    }
   }
   ## get fixed plot limits ----
   if(is.null(xlim)){
@@ -531,7 +541,7 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
                      x1 = paths.interp[[id]][max(2, frame - tail.length):frame, 1],
                      y0 = paths.interp[[id]][max(1, frame - tail.length - 1):(frame - 1), 2],
                      y1 = paths.interp[[id]][max(2, frame - tail.length):frame, 2],
-                     col = "gray87", lwd = 6*res)
+                     col = tail.colors[(id - 1) %% length(tail.colors) + 1], lwd = 6*tail.wd*res)
           }
         }
         ## clique-wise network segments ----
@@ -577,7 +587,7 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
           }
           if(is.na(pt.colors[1])){
             points(matrix(paths.interp[[id]][frame, 1:2], ncol = 2),
-                   col = covariate.ring, pch = 19, cex = 0.85*res)
+                   col = covariate.ring, pch = 19, cex = pt.cex*res*0.85)
             if(!is.na(paths.interp[[id]][frame, 3]) & !is.na(uncertainty.level)){
               lines(ellipse::ellipse(x = diag(paths.interp[[id]][frame, 3:4]^2),
                                      centre = paths.interp[[id]][frame, 1:2], level = uncertainty.level),
@@ -586,7 +596,7 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
           } else {
             points(matrix(paths.interp[[id]][frame, 1:2], ncol = 2),
                    col = covariate.ring, bg = pt.colors[id, 1 + id %in% dimmed],
-                   pch = 21, lwd = lwd*res, cex = 0.85*res)
+                   pch = 21, lwd = lwd*res, cex = pt.cex*res*0.85)
             if(!is.na(paths.interp[[id]][frame, 3]) & !is.na(uncertainty.level)){
               lines(ellipse::ellipse(x = diag(paths.interp[[id]][frame, 3:4]^2),
                                      centre = paths.interp[[id]][frame, 1:2], level = uncertainty.level),
@@ -603,7 +613,7 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
                          col = scales::alpha(colour = cliques$colors[[frame]][cl], network.ring.trans),
                          cex = radius[id], lwd = network.ring.wt*res)
                 }
-                radius[id] <- radius[id] + 0.85*res*(network[id, id2, frame] > network.thresh)
+                radius[id] <- radius[id] + pt.cex*res*0.85*(network[id, id2, frame] > network.thresh)
               }
             }
           }
@@ -632,13 +642,13 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
                      box.lwd = 0, bty = "n", text.col = "gray60", lty = NA, title = covariate.name)
             } else {
               color_ticks <- (covariate.ticks - covariate.range[1])/diff(covariate.range)
-              legend(covariate.legend.loc, pch = 21 - 2 * is.na(pt.colors[1]), pt.cex = 0.85*res, lwd = 2.5/1.5*res,
+              legend(covariate.legend.loc, pch = 21 - 2 * is.na(pt.colors[1]), pt.cex = pt.cex*res*0.85, lwd = 2.5/1.5*res,
                      col = grDevices::rgb(color_covariate_function(color_ticks), maxColorValue = 255),
                      legend = covariate.ticks, cex = res,
                      box.lwd = 0, bty = "n", text.col = "gray60", lty = NA, title = covariate.name)
             }
           } else {
-            legend(covariate.legend.loc, pch = 21 - 2 * is.na(pt.colors[1]), pt.cex = 0.85*res, lwd = 2.5/1.5*res,
+            legend(covariate.legend.loc, pch = 21 - 2 * is.na(pt.colors[1]), pt.cex = pt.cex*res*0.85, lwd = 2.5/1.5*res,
                    col = grDevices::rgb(color_covariate_function(0:1), maxColorValue = 255),
                    legend = paste(c("<", ">="), covariate.thresh), cex = res,
                    box.lwd = 0, bty = "n", text.col = "gray60", lty = NA, title = covariate.name)
@@ -714,7 +724,7 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
                      x1 = paths.interp[[id]][max(2, frame - tail.length):frame, 1],
                      y0 = paths.interp[[id]][max(1, frame - tail.length - 1):(frame - 1), 2],
                      y1 = paths.interp[[id]][max(2, frame - tail.length):frame, 2],
-                     col = "gray87", lwd = 6*res)
+                     col = tail.colors[(id - 1) %% length(tail.colors) + 1], lwd = 6*tail.wd*res)
           }
         }
         ## clique-wise network segments ----
@@ -760,7 +770,7 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
           }
           if(is.na(pt.colors[1])){
             points(matrix(paths.interp[[id]][frame, 1:2], ncol = 2),
-                   col = covariate.ring, pch = 19, cex = 0.85*res)
+                   col = covariate.ring, pch = 19, cex = pt.cex*res*0.85)
             if(!is.na(paths.interp[[id]][frame, 3]) & !is.na(uncertainty.level)){
               lines(ellipse::ellipse(x = diag(paths.interp[[id]][frame, 3:4]^2),
                                      centre = paths.interp[[id]][frame, 1:2], level = uncertainty.level),
@@ -769,7 +779,7 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
           } else {
             points(matrix(paths.interp[[id]][frame, 1:2], ncol = 2),
                    col = covariate.ring, bg = pt.colors[id, 1 + id %in% dimmed],
-                   pch = 21, lwd = lwd*res, cex = 0.85*res)
+                   pch = 21, lwd = lwd*res, cex = pt.cex*res*0.85)
             if(!is.na(paths.interp[[id]][frame, 3]) & !is.na(uncertainty.level)){
               lines(ellipse::ellipse(x = diag(paths.interp[[id]][frame, 3:4]^2),
                                      centre = paths.interp[[id]][frame, 1:2], level = uncertainty.level),
@@ -786,7 +796,7 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
                          col = scales::alpha(colour = cliques$colors[[frame]][cl], network.ring.trans),
                          cex = radius[id], lwd = network.ring.wt*res)
                 }
-                radius[id] <- radius[id] + 0.85*res*(network[id, id2, frame] > network.thresh)
+                radius[id] <- radius[id] + pt.cex*res*0.85*(network[id, id2, frame] > network.thresh)
               }
             }
           }
@@ -815,13 +825,13 @@ animate_paths <- function(paths, times = NULL, delta.t = NULL, n.frames = NULL, 
                      box.lwd = 0, bty = "n", text.col = "gray60", lty = NA, title = covariate.name)
             } else {
               color_ticks <- (covariate.ticks - covariate.range[1])/diff(covariate.range)
-              legend(covariate.legend.loc, pch = 21 - 2 * is.na(pt.colors[1]), pt.cex = 0.85*res, lwd = 2.5/1.5*res,
+              legend(covariate.legend.loc, pch = 21 - 2 * is.na(pt.colors[1]), pt.cex = pt.cex*res*0.85, lwd = 2.5/1.5*res,
                      col = grDevices::rgb(color_covariate_function(color_ticks), maxColorValue = 255),
                      legend = covariate.ticks, cex = res,
                      box.lwd = 0, bty = "n", text.col = "gray60", lty = NA, title = covariate.name)
             }
           } else {
-            legend(covariate.legend.loc, pch = 21 - 2 * is.na(pt.colors[1]), pt.cex = 0.85*res, lwd = 2.5/1.5*res,
+            legend(covariate.legend.loc, pch = 21 - 2 * is.na(pt.colors[1]), pt.cex = pt.cex*res*0.85, lwd = 2.5/1.5*res,
                    col = grDevices::rgb(color_covariate_function(0:1), maxColorValue = 255),
                    legend = paste(c("<", ">="), covariate.thresh), cex = res,
                    box.lwd = 0, bty = "n", text.col = "gray60", lty = NA, title = covariate.name)

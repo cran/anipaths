@@ -1,3 +1,14 @@
+anipaths v0.9.8 (Release date: 2020-02-27)
+==============
+
+Changes:
+
+* Support for varying 'pt.cex'
+
+* Support for a RasterStack of background images
+
+* Support for varying 'tail.colors'
+
 anipaths v0.9.7 (Release date: 2019-01-31)
 ==============
 

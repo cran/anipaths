@@ -4,8 +4,7 @@
 \alias{plot.paths_animation}
 \title{Plot animation path interpolation}
 \usage{
-\method{plot}{paths_animation}(x, ..., i = 1, level = 0.05,
-  ylim_x = NULL, ylim_y = NULL)
+\method{plot}{paths_animation}(x, ..., i = 1, level = 0.05, ylim_x = NULL, ylim_y = NULL)
 }
 \arguments{
 \item{x}{\code{paths_animation} object as created through a call to \code{animate_paths()}.}

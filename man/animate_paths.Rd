@@ -4,21 +4,56 @@
 \alias{animate_paths}
 \title{animate paths}
 \usage{
-animate_paths(paths, times = NULL, delta.t = NULL, n.frames = NULL,
-  interval = 1/12, paths.proj = "+proj=longlat", coord = c("x", "y"),
-  Time.name = "time", ID.name = NULL, whole.path = FALSE,
-  covariate = NULL, covariate.colors = c("black", "white"),
-  covariate.thresh = NULL, covariate.legend.loc = "bottomright",
-  par.opts = list(), dev.opts = list(), background = NULL,
-  bg.axes = TRUE, bg.opts = NULL, bg.misc = NULL, method = "html",
-  pt.colors = NULL, dimmed = NULL, res = 1.5, plot.date = TRUE,
-  date.col = "black", legend.loc = "topright", network = NULL,
-  network.times = NULL, network.thresh = 0.5, network.colors = NULL,
-  network.ring.wt = 3, network.ring.trans = 1,
-  network.segment.wt = 3, network.segment.trans = 0.5,
-  tail.length = 5, xlim = NULL, ylim = NULL, main = NULL,
-  bs = "'tp', fx=T", max.knots = NULL, uncertainty.level = NA,
-  override = FALSE, return.paths = FALSE, ...)
+animate_paths(
+  paths,
+  times = NULL,
+  delta.t = NULL,
+  n.frames = NULL,
+  interval = 1/12,
+  paths.proj = "+proj=longlat",
+  coord = c("x", "y"),
+  Time.name = "time",
+  ID.name = NULL,
+  whole.path = FALSE,
+  covariate = NULL,
+  covariate.colors = c("black", "white"),
+  covariate.thresh = NULL,
+  covariate.legend.loc = "bottomright",
+  par.opts = list(),
+  dev.opts = list(),
+  background = NULL,
+  bg.axes = TRUE,
+  bg.opts = NULL,
+  bg.misc = NULL,
+  method = "html",
+  pt.cex = 1,
+  pt.colors = NULL,
+  dimmed = NULL,
+  res = 1.5,
+  plot.date = TRUE,
+  date.col = "black",
+  legend.loc = "topright",
+  network = NULL,
+  network.times = NULL,
+  network.thresh = 0.5,
+  network.colors = NULL,
+  network.ring.wt = 3,
+  network.ring.trans = 1,
+  network.segment.wt = 3,
+  network.segment.trans = 0.5,
+  tail.wd = 1,
+  tail.length = 5,
+  tail.colors = "gray87",
+  xlim = NULL,
+  ylim = NULL,
+  main = NULL,
+  bs = "'tp', fx=T",
+  max.knots = NULL,
+  uncertainty.level = NA,
+  override = FALSE,
+  return.paths = FALSE,
+  ...
+)
 }
 \arguments{
 \item{paths}{Either a \code{data.frame} with longitudes/eastings, latitudes/northings, IDs, and times (see \code{coord}, \code{ID.name}, and \code{Time.name}), a \code{SpatialPointsDataFrame} with IDs and times, or a list of data.frames containing the longitudes, latitudes, and times for each individual (with names provided).
@@ -54,7 +89,7 @@ If all paths are already synchornous, another option for passing the data is to 
 
 \item{dev.opts}{Options passed to \code{png()} before creating each frame.}
 
-\item{background}{Three possibilities: (1) A single background image over which animation will be overlayed, or a list of images corresponding to each frame. (2) A list with values \code{location} (long/lat), \code{zoom}, and \code{maptype} (see \code{ggmap::get_map()}) which will be used to generate a background for the animation based on Google maps tiles. Additional arguments may be added which will be passed to \code{ggmap::get_map()}. (3) A logical value of \code{TRUE}, which will cue the function to get the best Google Map tile combination it can come up with. Note: \code{ggmap} must be installed for (2) and (3). Note: if you are calling \code{animate_paths()} several times in a short period of time you may get an error from Google for trying to pull tiles too often (e.g., \code{Error in download.file(url, destfile = tmp, quiet = !messaging, mode = "wb") : cannot open URL 'http://maps.googleapis...'}). Waiting a minute or so usually solves this.}
+\item{background}{Three possibilities: (1) A single background image over which animation will be overlayed, or a list/stack of images/rasters corresponding to each frame. (2) A list with values \code{center} (long/lat), \code{zoom}, and \code{maptype} (see \code{ggmap::get_googlemap()}) which will be used to generate a background for the animation based on Google maps tiles. Additional arguments may be added which will be passed to \code{ggmap::get_googlemap()}. (3) A logical value of \code{TRUE}, which will cue the function to get the best Google Map tile combination it can come up with. Note: \code{ggmap} must be installed for (2) and (3). Note: if you are calling \code{animate_paths()} several times in a short period of time you may get an error from Google for trying to pull tiles too often (e.g., \code{Error in download.file(url, destfile = tmp, quiet = !messaging, mode = "wb") : cannot open URL 'http://maps.googleapis...'}). Waiting a minute or so usually solves this.}
 
 \item{bg.axes}{logical: should animation place axis labels when using a background image (default is \code{TRUE}). If \code{RGoogleMaps} is used to produce background, labels will be "northing" and "easting". Otherwise, the strings given to \code{coord} will be used.}
 
@@ -63,6 +98,8 @@ If all paths are already synchornous, another option for passing the data is to 
 \item{bg.misc}{Character string which will be executed as \code{R} code after generating the background, and before adding trajectories, etc.}
 
 \item{method}{either \code{"html"} (default) or \code{"mp4"}. The latter requires the user has installed \code{ffmpeg} (see \code{?animation::saveVideo()}).}
+
+\item{pt.cex}{A numeric value giving the character expansion (size) of the points for each individual. Default is 1.}
 
 \item{pt.colors}{A vector of colors to be used for each individual in the animation. Default values come from Color Brewer palettes. When a network is provided, this is ignored and individuals are all colored black. If \code{NA}, no plot colors are chosen to distinguish individuals. This can be useful when making animations involving a covariate. Consider also setting \code{legend.loc} to \code{NA} in this case.}
 
@@ -92,7 +129,11 @@ If all paths are already synchornous, another option for passing the data is to 
 
 \item{network.segment.trans}{transparency of network segments (default is 0.5)}
 
+\item{tail.wd}{Thickness of tail trailing behind each individual. Default is 1.}
+
 \item{tail.length}{Length of the tail trailing each individual.}
+
+\item{tail.colors}{default is "gray87". Can be single color or vector of colors.}
 
 \item{xlim}{Boundaries for plotting. If left undefined, the range of the data will be used.}
 
@@ -128,9 +169,9 @@ animate_paths(paths = vultures_paths,
               coord = c("location.long", "location.lat"),
               Time.name = "POSIX",
               ID.name = "individual.local.identifier")
+system("rm -r js; rm -r css; rm -r images; rm index.html")
 \donttest{
-readline("Press [enter] to continue.")
-background <- list(location = c(-90, 10),
+background <- list(center = c(-90, 10),
                    zoom = 3,
                    maptype = "satellite")
 COVARIATE <- cos(as.numeric(vultures_paths$timestamp) / 
