@@ -4,7 +4,7 @@
 \alias{plot.paths_animation}
 \title{Plot animation path interpolation}
 \usage{
-\method{plot}{paths_animation}(x, ..., i = 1, level = 0.05, ylim_x = NULL, ylim_y = NULL)
+\method{plot}{paths_animation}(x, ..., i = 1, level = 0.05, type = "path", ylim_x = NULL, ylim_y = NULL)
 }
 \arguments{
 \item{x}{\code{paths_animation} object as created through a call to \code{animate_paths()}.}
@@ -15,6 +15,8 @@
 
 \item{level}{confidence level for error bands. \code{NA} removes bands.}
 
+\item{type}{either \code{"path"} (default) for two marginal interpolation plots, or \code{"covariate"} for a single interpolation plot}
+
 \item{ylim_x}{y-axis limits for marginal plots (x, easting, etc.)}
 
 \item{ylim_y}{y-axis limits for marginal plots (y, northing, etc.)}
@@ -24,24 +26,28 @@ This is mainly intended as a way to check that the interpolations used in the an
 }
 \examples{
 vultures$POSIX <- as.POSIXct(vultures$timestamp, tz = "UTC")
-vultures_paths <- vultures[vultures$POSIX > as.POSIXct("2009-03-22", origin = "1970-01-01") & 
-                             vultures$POSIX < as.POSIXct("2009-04-05", origin = "1970-01-01"), ]
-interpolated_paths <- 
-animate_paths(paths = vultures_paths,
-              delta.t = 3600*6,
-              coord = c("location.long", "location.lat"),
-              Time.name = "POSIX",
-              ID.name = "individual.local.identifier", 
-              max.knots = 13,
-              return.paths = TRUE)
-interpolated_paths_gp <- 
-animate_paths(paths = vultures_paths,
-              delta.t = 3600*6,
-              coord = c("location.long", "location.lat"),
-              Time.name = "POSIX",
-              ID.name = "individual.local.identifier", 
-              max.knots = 3*13,
-              return.paths = TRUE)
+vultures_paths <- vultures[vultures$POSIX > as.POSIXct("2009-03-22", origin = "1970-01-01") &
+  vultures$POSIX < as.POSIXct("2009-04-05", origin = "1970-01-01"), ]
+interpolated_paths <-
+  animate_paths(
+    paths = vultures_paths,
+    delta.t = 3600 * 6,
+    coord = c("location.long", "location.lat"),
+    Time.name = "POSIX",
+    ID.name = "individual.local.identifier",
+    max.knots = 13,
+    return.paths = TRUE
+  )
+interpolated_paths_gp <-
+  animate_paths(
+    paths = vultures_paths,
+    delta.t = 3600 * 6,
+    coord = c("location.long", "location.lat"),
+    Time.name = "POSIX",
+    ID.name = "individual.local.identifier",
+    max.knots = 3 * 13,
+    return.paths = TRUE
+  )
 plot(interpolated_paths, i = 2)
 plot(interpolated_paths_gp, i = 2, level = 0.01)
 }

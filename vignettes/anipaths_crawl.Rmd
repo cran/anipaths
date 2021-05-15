@@ -1,0 +1,154 @@
+---
+title: "Animating Animal Trajectories Using Correlated RAndom Walk Library (crawl)"
+author: Kristine Dinh, Henry Scharf
+date: "`r Sys.Date()`"
+output: 
+  rmarkdown::html_vignette:
+    fig_caption: yes
+    toc: true 
+vignette: >
+  %\VignetteIndexEntry{anipaths_crawl}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+
+options(rmarkdown.html_vignette.check_title = FALSE)
+
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>", 
+  eval = F
+)
+
+```
+
+### Introduction
+
+The purpose of this vignette is to introduce a new argument `interpolation_type = "crawl"` for the `anipaths::animate_paths()` function. This interpolation type is based on the correlated random walk model implemented in the [`crawl`](https://CRAN.R-project.org/package=crawl) package and offers an alternative to the spline-based general additive model (GAM) from the [`mgcv`](https://www.rdocumentation.org/packages/mgcv/versions/1.8-34/topics/gam) (see also [Buderman et al. (2016)](https://besjournals.onlinelibrary.wiley.com/doi/full/10.1111/2041-210X.12465)). The primary benefits of the new interpolation type are (i) an alternative form of temporal dependence that may be more consistent with real animal movement, and (ii) the potential to simulate several realizations from the fitted correlated random walk model to better depict uncertainty for animal trajectories.
+
+New types of plots are also offered when using the `crawl` interpolation including points, points with tails, [blur](https://coolbutuseless.github.io/2019/03/19/geom_blurry-proof-of-concept/) points, and blur points with tails. Blur points are semi-transparent and vary in diameter according to point-wise uncertainty estimates. For example, if uncertainty is large, the blur effect will be larger in diameter.
+
+### Getting Started
+
+In addition to `anipaths`, load packages `tidyverse`, and `magrittr` to prepare the data.
+
+```{r libraries, message=FALSE, warning=FALSE}
+library(anipaths)
+library(tidyverse)
+library(magrittr)
+```
+
+The `vultures` dataset is a built in data inside the `anipaths` package. We will use `vultures` to illustrate the functionality of the package. To prepare the data, we need to create a time stamp variable of class `numeric` or `POSIX`. If you wish to specify the interval of predicted time as a character string (e.g., `"day"`), the class of your time variable must be `POSIX`.
+
+```{r subset}
+vultures %<>% 
+  mutate(POSIX = as.POSIXct(timestamp, tz = "UTC"))
+
+vultures_spring11 <- vultures %>% 
+  filter(POSIX > as.POSIXct("2011-04-05", origin = "1970-01-01") &
+           POSIX < as.POSIXct("2011-05-05", origin = "1970-01-01")
+         &
+           (individual.local.identifier %in%
+           c('Argentina', 'Domingo', 'La Pampa', 'Whitey', 'Young Luro'))
+  )
+```
+
+In addition, the data must have an easting/longitude and northing/latitude variable. You can set the name for your coordinate using the `coord` argument (default is `c("x", "y")`).
+
+### Simple Animation Using `crawl` Interpolation with Tails
+
+This animation will interpolate synchronized paths for each animal in the `vultures` data. A default value of 5 simulated trajectories will be generated in addition to a single best-estimate of the true trajectories. The animation will represent each animal with one point, and 5 + 1 lines for each simulation and best prediction paths.
+
+```{r crawl with tails}
+animate_paths(paths = vultures_spring11,
+              delta.t = "day",
+              coord = c("location.long", "location.lat"),
+              Time.name = "POSIX",
+              ID.name = "individual.local.identifier",
+              interpolation_type = "crawl",
+              simulation = TRUE)
+```
+
+The interval of time can also be changed to several hours instead of days. At this finer resolution the simulated trajectories are more visible, although it does take longer to produce the animation because more images are used.
+
+```{r crawl with tails hi res}
+animate_paths(paths = vultures_spring11,
+              delta.t = 3600 * 4,
+              coord = c("location.long", "location.lat"),
+              Time.name = "POSIX",
+              ID.name = "individual.local.identifier", 
+              interpolation_type = "crawl",
+              simulation = TRUE)
+```
+
+Besides an individual point for each animal, a blur point is also available to depict pointwise uncertainty. The larger the blurred point, the larger the uncertainty.
+
+```{r blur}
+animate_paths(paths = vultures_spring11,
+              delta.t = 3600 * 6,
+              coord = c("location.long", "location.lat"),
+              Time.name = "POSIX",
+              ID.name = "individual.local.identifier", 
+              interpolation_type = "crawl",
+              crawl.plot.type = "blur.tail")
+```
+
+### Animation Using `crawl` Interpolation with Tails and Background
+
+To add a `ggmap` background from Google, we first need to register our API key using the `register_google()` function from the `ggmap` package. The function will throw an error if registration has not been done before hand.
+
+Set the argument `background = TRUE` in the `animate_paths()` function to get a background from Google map. This `TRUE` statement will produce an automatically chosen background map that attempts to match the extent of the data. Another way to set a background is to provide information on the center, zoom, and type of the desired map tiles.
+
+```{r make background}
+background <- list(center = c(-70, -20),
+                   zoom = 4,
+                   maptype = "satellite")
+```
+
+Once a background has been defined, simply run the `animate_paths()` function with an additional parameter `background = background`.
+
+```{r use background}
+library(ggmap)
+animate_paths(paths = vultures_spring11,
+              delta.t = 3600 * 6,
+              coord = c("location.long", "location.lat"),
+              Time.name = "POSIX",
+              ID.name = "individual.local.identifier", 
+              background = background,
+              interpolation_type = "crawl", simulation = TRUE)
+```
+
+### Animation for a Single Animal Using `crawl` Interpolation
+
+Sometimes it is useful good to focus on a single animal to see their movement in details with a a zoomed in window. We can focus on one individual in the vultures application by first sub-setting the data to select only one animal. For this example, we isolated Irma in the animation.
+
+```{r Whitney subset}
+vultures_Whitey <- vultures_spring11 %>% 
+  filter(individual.local.identifier == "Whitey")
+```
+
+Then, run the same `animate_paths` function with the same parameters as specified before.
+
+```{r single path}
+animate_paths(paths = vultures_Whitey,
+              delta.t = 3600 * 4,
+              coord = c("location.long", "location.lat"),
+              Time.name = "POSIX",
+              ID.name = "individual.local.identifier", 
+              interpolation_type = "crawl", background = T,
+              simulation = TRUE, main = "Whitey")
+```
+
+### Additional parameters to Customize Animations
+
+-   `simulation`: change this parameter to `FALSE` to see only one best estimate of the continuous trajectory of the animal instead of multiple relations
+-   `simulation.iter`: change this value to higher or lower than 5 to see more or fewer predicted realizations
+-   `theme_map`: add a customized theme for the background of the animation other than a map background
+
+For more information about each parameters, run `?anipaths::animate_paths`.
+
+```{r remove files, include = F}
+system("rm -r js; rm -r css; rm -r images; rm index.html")
+```

@@ -1,5 +1,5 @@
 ---
-title: "anipaths"
+title: "anipaths: spline-based interpolation"
 author: "Henry Scharf"
 date: "`r Sys.Date()`"
 output: 
@@ -11,6 +11,10 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+```{r, include = F}
+options(rmarkdown.html_vignette.check_title = FALSE)
+knitr::opts_chunk$set(eval = F)
+```
 
 ## Animating animal trajectories
 
@@ -20,7 +24,7 @@ The package `anipaths` contains a collection of telemetry observations for turke
 
 To animate the locations, we first need to create a time stamp variable of class `numeric` or `POSIX`. One advantage to using the `POSIX` class is that we can specify the gaps in the interpolation (`delta.t`) using convenient character strings like `"hour"` or `"week"`.
 
-```{r, fig.show='hold', fig.cap="test", eval = F}
+```{r, fig.show='hold', fig.cap="test"}
 library(anipaths)
 vultures$POSIX <- as.POSIXct(vultures$timestamp, tz = "UTC")
 vultures_paths <- vultures[format(vultures$POSIX, "%Y") == 2009, ] ## limit attention to 2009
@@ -35,7 +39,8 @@ animate_paths(paths = vultures_paths,
 ### Using background maps
 
 Often it may be useful to add a map of the relevant study area. There are lots of ways to incorporate a map. The simplest way is to set `background` to `TRUE`, in which case `anipaths` will do the best it can to select a map based on the data. In the next example, we've changed the time step to help the animations load a little faster.
-```{r map_logical, eval = F}
+```{r map_logical}
+library(ggmap)
 delta.t <- "week"
 animate_paths(paths = vultures_paths, 
               delta.t = delta.t,
@@ -48,10 +53,10 @@ animate_paths(paths = vultures_paths,
 You can also give a long/lat `location`, `zoom` level (3-21; see `?ggmap::get_map()`), and `maptype` (`satellite`, `terrain`, `hybrid`) to be passed to `ggmap::get_map()`, and `anipaths` will make a background for you. 
 
 As shown below, the value of `delta.t` can be specified as a numeric, which will be interpreted in whatever units used by `as.numeric(paths['Time.name'])` (in our case, this is seconds). 
-```{r map_google, eval = F}
+```{r map_google}
 vultures_paths <- vultures[format(vultures$POSIX, "%Y") == 2009:2010, ]
 delta.t <- 3600*24*2 ## number of seconds in two days
-background <- list(location = c(-90, 10), 
+background <- list(center = c(-90, 10), 
                    zoom = 3, 
                    maptype = "satellite")
 animate_paths(paths = vultures_paths, 
@@ -63,7 +68,7 @@ animate_paths(paths = vultures_paths,
 ```
 
 You can also supply your own background image. The projection and units should match the data.
-```{r map_simple, eval = F}
+```{r map_simple}
 delta.t <- "week"
 background <- rworldmap::getMap(resolution = "coarse")
 sp::proj4string(background) ## matches default projection in animate_paths()
@@ -81,7 +86,7 @@ The function `animate_paths()` must project the data to match Google's map tiles
 
 If you have a covariate of interest for each individual, `animate_paths()` can display that information as a colored ring around each individual. We don't have any natural individual-level covariates available for the vultures, so we'll make one up for the purposed of demonstration. The following code assigns each individual a random interval for each of three behaviors: *exploratory*, *directed*, and *stationary*.
 
-```{r make_covariates, eval = F}
+```{r make_covariates}
 behaviors <- c("exploratory", "directed", "stationary")
 set.seed(1)
 vultures_paths$behavior <- 
@@ -94,7 +99,7 @@ vultures_paths$behavior <-
 
 The covariates have now been appended to the `paths` data frame. We can let `animate_paths()` know we would like it to display this information by setting the argument `covariate` to match the name of the appropriate column in `paths` (i.e., `behavior`). The default colors are a gray scale. Any collection of colors can be provided (e.g., `covariate.colors = viridis::viridis(3)`) which will be turned into a palette to match the support of the covariate. 
 
-```{r plot_covariates, eval = F}
+```{r plot_covariates}
 delta.t <- "day"
 background <- rworldmap::getMap(resolution = "coarse")
 sp::proj4string(background)
@@ -104,7 +109,7 @@ animate_paths(paths = vultures_paths,
               Time.name = "POSIX",
               covariate = "behavior", covariate.colors = viridis::viridis(3),
               ID.name = "individual.local.identifier",
-              background = background, max.knots = 80)
+              background = background, s_args = c(k = 80))
 ```
 
 *Note*: if a covariate is represented numerically but should be treated as a factor, changing the class using `as.factor()` should prevent `animate_paths()` from interpolating to "intermediate" values (e.g., if male and female are coded as 0 and 1, defining the column of the data frame as a factor will constrain individuals to only take on values of 0 and 1).
@@ -113,7 +118,7 @@ animate_paths(paths = vultures_paths,
 
 This situation may arise, for example, when a user wishes to employ `anipaths` to produce visualizations of realizations generated from a discrete-time movement model. To demonstrate how to use `animate_paths()` to animate already synchronous paths, bypassing the spline-based interpolation, we can use `animate_paths()` to produce synchronized paths (setting `return.paths = TRUE`), and then pretend we had those synchronized paths from the beginning. In this case, we will also pretend we have covariates associated with those synchronized times.
 
-```{r generate_synchronous, eval = F}
+```{r generate_synchronous}
 delta.t <- 3600*24*3 ## 3 days between synchronized observations
 background <- rworldmap::getMap(resolution = "coarse")
 sp::proj4string(background)
@@ -125,7 +130,7 @@ vultures_paths$behavior <-
     switches <- c(0, sort(sample(1:nrow(v_id), 2)), nrow(v_id))
     rep(behaviors[sample(1:3, 3)], diff(switches))
   }))
-synchro_paths <- animate_paths(paths = vultures_paths, max.knots = 70,
+synchro_paths <- animate_paths(paths = vultures_paths, s_args = c(k = 70),
                                delta.t = delta.t, covariate = "behavior",
                                coord = c("location.long", "location.lat"),
                                Time.name = "POSIX", ID.name = "individual.local.identifier", 
@@ -134,9 +139,9 @@ synchro_paths <- animate_paths(paths = vultures_paths, max.knots = 70,
 
 Now we input our synchronized paths (a list of matrices all with the same number of rows) into the `paths` argument, the synchronized times in the `times` argument, and the synchronized covariates in the `covariate` argument. Naming the first element of the `covariate` list passes the label through to the legend in the animation.
 
-```{r animate_sync_covariates, eval = F}
+```{r animate_sync_covariates}
 names(synchro_paths$covariate.interp) <- "behavior"
-animate_paths(paths = synchro_paths$paths.interp, times = synchro_paths$times, 
+animate_paths(paths = synchro_paths$paths.interp, times = synchro_paths$time.grid, 
               covariate = synchro_paths$covariate.interp, 
               covariate.colors = 1:3, background = background)
 ```
@@ -147,14 +152,14 @@ The default format for displaying the animation is an `index.html` file. This is
 
 ## Checking the interpolation
 
-As a way to check that `anipaths` is producing reasonable interpolations of the telemetry observations, a generic `plot()` function is provided that takes an argument of class `paths_animation` produced by calling `animate_paths()` with `return.paths = TRUE`. See `example(plot.paths_animation)`. Adjusting the parameters of the interpolation can be done by modifying the `bs` and `max.knots` arguments. As a general rule, if the interpolated paths look "too smooth", try increasing `max.knots`.
+As a way to check that `anipaths` is producing reasonable interpolations of the telemetry observations, a generic `plot()` function is provided that takes an argument of class `paths_animation` produced by calling `animate_paths()` with `return.paths = TRUE`. See `example(plot.paths_animation)`. Adjusting the parameters of the interpolation can be done by modifying the `s_args` argument. As a general rule, if the interpolated paths look "too smooth", try increasing the number of knots using `s_args = c(k = ...)`.
 
 ## Additional features
 ### Showing location uncertainty (beta)
 
 Uncertainty about the depicted location of each individual is computed as part of the interpolation procedure. Error ellipses representing a Gaussian approximation to the uncertainty can be added by specifying a quantile level for the argument `uncertainty.level`. These ellipses should really only be interpreted qualitatively, but may be useful for communicating when there is significant uncertainty about the location of an individual (perhaps due to sparse observations in time). 
 
-```{r uncertainty_anim, eval=F}
+```{r uncertainty_anim}
 vultures_paths <- vultures[format(vultures$POSIX, "%Y") == 2009 & 
                              vultures$location.lat > 32 & 
                              vultures$individual.local.identifier != "Mark", ]
@@ -173,7 +178,7 @@ animate_paths(paths = vultures_paths,
 
 Set `whole.path = TRUE`. It is not required, but probably clearer visually, if we also set `tail.length = 0`.
 
-```{r whole_path_anim, eval=F}
+```{r whole_path_anim}
 animate_paths(paths = vultures_paths, 
               delta.t = delta.t,
               coord = c("location.long", "location.lat"),
@@ -185,7 +190,7 @@ animate_paths(paths = vultures_paths,
 
 ### Dimming selected individuals
 
-```{r dim_anim, eval=F}
+```{r dim_anim}
 vultures_paths <- vultures[format(vultures$POSIX, "%Y") == 2009 & 
                              vultures$location.lat > 32, ]
 animate_paths(paths = vultures_paths, 
@@ -202,14 +207,14 @@ It is also possible to visualize dynamic pair-wise relational information with `
 
 We don't have existing relationships among the vultures to display, so we'll make some up for the purposes of demonstration. 
 
-```{r make_network, eval=F}
+```{r make_network}
 vultures_paths <- vultures[format(vultures$POSIX, "%Y") == 2009, ]
 set.seed(1)
 n_indiv <- length(unique(vultures_paths$individual.local.identifier))
 change_pts <- 5
-network_times <- seq(min(vultures_paths$POSIX), max(vultures_paths$POSIX), l = change_pts + 2)
-network <- array(NA, dim = c(n_indiv, n_indiv, length(network_times)))
-for(time_i in 2:length(network_times)){
+network.times <- seq(min(vultures_paths$POSIX), max(vultures_paths$POSIX), l = change_pts + 2)
+network <- array(NA, dim = c(n_indiv, n_indiv, length(network.times)))
+for(time_i in 2:length(network.times)){
   network_mat <- matrix(sample(1:0, n_indiv^2, prob = c(0.1, 0.9), replace = T), 
                         n_indiv, n_indiv)
   network_mat[lower.tri(network_mat)] <- t(network_mat)[lower.tri(network_mat)]
@@ -218,12 +223,16 @@ for(time_i in 2:length(network_times)){
 }
 ```
 
-```{r network_anim, eval=F}
+```{r network_anim}
 delta.t <- 3600*24*2
 animate_paths(paths = vultures_paths, 
               delta.t = delta.t,
               coord = c("location.long", "location.lat"),
               Time.name = "POSIX",
-              ID.name = "individual.local.identifier", max.knots = 50,
-              background = background, network = network, network.times = network_times)
+              ID.name = "individual.local.identifier",
+              background = background, network = network, network.times = network.times)
+```
+
+```{r remove files, include = F}
+system("rm -r js; rm -r css; rm -r images; rm index.html")
 ```

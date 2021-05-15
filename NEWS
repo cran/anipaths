@@ -1,3 +1,18 @@
+anipaths v0.10.0 (Release date: 2020-05-14)
+==============
+
+Changes:
+
+* Alternative interpolation model: correlated random walk model of Johnson et al. (2008) implemented in crawl R package
+
+* Two forms of uncertainty visualization: blurred points and multiple realizations (crawl only)
+
+* New vignette demonstrating new interpolation model option and uncertainty visualization
+
+* Additional diagnostic plots available to verify interpolation of both paths and covariates
+
+* Several back-end improvements to code structure/organization
+
 anipaths v0.9.8 (Release date: 2020-02-27)
 ==============
 
