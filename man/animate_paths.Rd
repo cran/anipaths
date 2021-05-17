@@ -204,7 +204,7 @@ animate_paths(
   Time.name = "POSIX",
   ID.name = "individual.local.identifier"
 )
-\donttest{
+\dontrun{
 background <- list(
   center = c(-90, 10),
   zoom = 3,
@@ -223,9 +223,7 @@ animate_paths(
   ID.name = "individual.local.identifier",
   background = background
 )
-}
 
-\dontrun{
 # animation using crawl interpolation
 library(rgdal)
 animate_paths(

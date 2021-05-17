@@ -1,6 +1,13 @@
 anipaths v0.10.0 (Release date: 2020-05-14)
 ==============
 
+Changes: 
+
+* Address NOTE in example for animate_paths() for CRAN
+
+anipaths v0.10.0 (Release date: 2020-05-14)
+==============
+
 Changes:
 
 * Alternative interpolation model: correlated random walk model of Johnson et al. (2008) implemented in crawl R package
