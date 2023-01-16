@@ -4,7 +4,15 @@
 \alias{paths_gam_interp}
 \title{Synchronous GAM interpolation of all paths}
 \usage{
-paths_gam_interp(paths, coord, Time.name, time.grid, s_args = NULL)
+paths_gam_interp(
+  paths,
+  coord,
+  Time.name,
+  time.grid,
+  s_args = NULL,
+  uncertainty.type,
+  verbose = F
+)
 }
 \arguments{
 \item{paths}{lists of data.frames containing positions, times, and covariate for each individual}
@@ -15,7 +23,11 @@ paths_gam_interp(paths, coord, Time.name, time.grid, s_args = NULL)
 
 \item{time.grid}{grid of possible times to use for interpolation (individuals will only be interpolated to times within the range of observation times)}
 
-\item{s_args}{Arguments to \code{mgcv::s()} can be passed using a named list/vector.}
+\item{s_args}{List of arguments to \code{mgcv::s()} the same length as number of unique individuals. Each entry in the list should be a named list/vector.}
+
+\item{uncertainty.type}{State what type of uncertainty plot 1 is default for tails more than 1 is amount of predicted trajectories for each unique individual and blurs for blur plot}
+
+\item{verbose}{logical; \code{TRUE} prints messages about fitting details}
 }
 \value{
 list of interpolated paths by individual

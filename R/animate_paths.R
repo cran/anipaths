@@ -57,7 +57,7 @@
 #' @param pt.wd size of the points; default is 1
 #' @param res Resolution of images in animation. Increase this for higher quality (and larger) images.
 #' @param return.paths logical. Default is \code{FALSE}, but if \code{TRUE} then the interpolated paths are returned and no animation is produced.
-#' @param s_args Arguments to \code{mgcv::s()} for GAM-based interpolation can be passed using a named list/vector.
+#' @param s_args Default is \code{NULL}, in which case \code{anipaths} attempts to select a reasonable number of knots for the GAM interpolation. Alternatively, the user can provide a list of arguments to \code{mgcv::s()} the same length and order as number of unique individuals (i.e., \code{unique(paths[, ID.name])}). Each entry in the list should be a named list/vector (e.g., \code{s_args = list(list(k = 10), list(k = 12), ...)}).
 #' @param simulation logical. Generate simulation predictions to have multiple projects for the animal paths; default is \code{FALSE}.
 #' @param simulation.iter an integer of how many paths the crawl model will generate; default is 5.
 #' @param tail.alpha alpha value for the tails
@@ -67,22 +67,26 @@
 #' @param theme_map plot theme for \code{ggplot}, default is \code{NULL}
 #' @param times If all paths are already synchornous, another option for passing the data is to define \code{paths} as a list of matrices, all with the same number of rows, and to specify the times separately via this argument.
 #' @param uncertainty.level value in (0, 1) corresponding to \code{level} at which to draw uncertainty ellipses. \code{NA} (default) results in no ellipses.
+#' @param uncertainty.type State what type of uncertainty plot 1 is default for tails more than 1 is amount of predicted trajectories for each unique individual and blurs for blur plot
 #' @param whole.path logical. If \code{TRUE} (default = \code{FALSE}), the complete interpolated trajectories will be plotted in the background of the animation. If \code{whole.path = TRUE}, consider also setting \code{tail.length = 0}.
+#' @param verbose logical; \code{TRUE} prints messages about fitting details
 #' @param xlim Boundaries for plotting. If left undefined, the range of the data will be used.
 #' @param ylim Boundaries for plotting. If left undefined, the range of the data will be used.
 #' @param ... other arguments to be passed to \code{ani.options} to animation options such as the time interval between image frames.
-#'
+#' 
 #' @return video file, possibly a directory containing the individual images, or interpolated paths.
 #' @export
 #' @importFrom mgcv gam s
 #' @importFrom stats as.formula predict approx reshape
 #' @importFrom animation ani.options saveHTML saveVideo
 #' @importFrom graphics par plot mtext axis segments points legend
-#' @importFrom sp CRS spTransform coordnames coordinates plot proj4string
+#' @importFrom sp coordnames
+#' @importFrom sf st_as_sf st_transform
 #' @importFrom grDevices png dev.off colorRamp
 #' @importFrom ggmap get_googlemap
 #' @importFrom raster nlayers
 #' @importFrom scales alpha
+#' @importFrom mvtnorm rmvnorm
 #'
 #' @examples ##
 #' vultures$POSIX <- as.POSIXct(vultures$timestamp, tz = "UTC")
@@ -116,7 +120,6 @@
 #' )
 #' 
 #'# animation using crawl interpolation
-#' library(rgdal)
 #' animate_paths(
 #'   paths = vultures_paths,
 #'   delta.t = "week",
@@ -149,8 +152,28 @@ animate_paths <- function(paths, coord = c("x", "y"), Time.name = "time",
                           pt.wd = 1, res = 1.5, return.paths = FALSE, s_args = NULL, 
                           simulation = FALSE, simulation.iter = 12, tail.alpha = 0.6, 
                           tail.colors = "gray87", tail.length = 5, tail.wd = 1, 
-                          theme_map = NULL, times = NULL, uncertainty.level = NA, 
-                          whole.path = FALSE, xlim = NULL, ylim = NULL, ...) {
+                          theme_map = NULL, times = NULL, uncertainty.level = NA, uncertainty.type = 1, 
+                          whole.path = FALSE, xlim = NULL, ylim = NULL, verbose = FALSE, ...) {
+  
+  ## permission to overwrite. If not granted, suggestions given to save animations
+  check <- check_overwrite(method=method, return.paths=return.paths, ...)
+  if(isFALSE(check)){
+    return(
+      message(paste(
+        "Interupting anipaths to prevent overwriting existing files.",
+        "Some options for viewing your animation:",
+        "Option 1: Create and set a new directory to save animation files. See setwd() and dir.create()",
+        "Option 2: Set argument img.name to add your animation to existing index.html link",
+        "Option 3: Set argument method = 'mp4' and video.name to new value for stand-alone animation.", 
+        sep = "\n"))
+    )
+  }
+  ## Check for incompatible arguments ----
+  if(uncertainty.type == "blur" & !is.null(background) & !isFALSE(background)){
+    stop(paste("Blur with backgrounds is not yet available. \n",
+               "If you would like to use a background, we suggest",
+               "setting uncertainty.type to a positive integer."))
+  }
   ## SpatialPointsDataFrame ----
   if (inherits(paths, "SpatialPointsDataFrame")) {
     message("\n SpatialPointsDataFrame object detected.")
@@ -169,7 +192,7 @@ animate_paths <- function(paths, coord = c("x", "y"), Time.name = "time",
   covariate.name <- covariate
   if (is.data.frame(paths)) {
     paths.df <- paths
-
+    
     ## get individual's names
     ID_names <- unique(paths[, ID.name])
     if (is.null(ID.name)) {
@@ -208,7 +231,7 @@ animate_paths <- function(paths, coord = c("x", "y"), Time.name = "time",
       if (is.numeric(covariate.interp[[1]])) {
         covariate.factors <- NA
       } else if (is.character(covariate.interp[[1]])) {
-
+        
       } else {
         covariate.factors <- levels(as.factor(covariate.interp[[1]]))
       }
@@ -220,13 +243,13 @@ animate_paths <- function(paths, coord = c("x", "y"), Time.name = "time",
       covariate.interp <- NULL
     }
   }
-
+  
   n.indiv <- length(paths)
-
+  
   ## timing ----
   ## if 'times' supplied, but paths is a list of matrices/data.frames, then need to append the times
   if (!is.null(times) &
-    all(lapply(paths, nrow) == nrow(paths[[1]]))) {
+      all(lapply(paths, nrow) == nrow(paths[[1]]))) {
     paths <- lapply(paths, function(path.i) {
       df <- as.data.frame(cbind(path.i, times))
       names(df) <- c(coord, "time")
@@ -254,7 +277,7 @@ animate_paths <- function(paths, coord = c("x", "y"), Time.name = "time",
     }
   }
   n.frames <- length(time.grid)
-
+  
   ## warn if this animation might take a long time
   if (!override) {
     if (length(paths) > 20 || n.frames > 1000) {
@@ -286,7 +309,8 @@ animate_paths <- function(paths, coord = c("x", "y"), Time.name = "time",
   if(!exists("paths.interp")){
     if (interpolation_type == "gam") {
       paths.interp <- paths_gam_interp(paths = paths, coord = coord, Time.name = Time.name,
-                                       time.grid = time.grid, s_args = s_args)
+                                       time.grid = time.grid, s_args = s_args, 
+                                       uncertainty.type = uncertainty.type, verbose = verbose)
       paths.interp.out <- paths.interp
     } else if (interpolation_type == "crawl") {
       crawl_paths <- crawl_interpolation(
@@ -296,7 +320,7 @@ animate_paths <- function(paths, coord = c("x", "y"), Time.name = "time",
         simulation = simulation, simulation.iter = simulation.iter, 
         time.grid = time.grid, Time.name = Time.name)
       paths.interp <- crawl_paths
-      if(class(paths.interp) == "data.frame") paths.interp <- list(paths.interp)
+      if(inherits(paths.interp, "data.frame")) paths.interp <- list(paths.interp)
       ## return.paths = TRUE formatting
       paths.interp.out <- vector("list", length(ID_names))
       for(id in ID_names){
@@ -328,51 +352,33 @@ animate_paths <- function(paths, coord = c("x", "y"), Time.name = "time",
   }
   ## make list of background images for each frame ----
   if ((isTRUE(background) || sum(names(background) %in% c("center", "zoom", "maptype")) == 3) &
-    is.null(getOption("ggmap"))) {
+      is.null(getOption("ggmap"))) {
     stop(paste(
       "Google maps now requires an API key. Once you have registered",
       "an account with Google here (https://cloud.google.com/maps-platform/),",
       "you can provide the API key via the ggmap function",
-      "register_google(key = 'YOUR_API_KEY'). This requires users update",
-      "ggmap to the most recent release of ggmap (3.0.0) and load the ggmap",
-      "package using library(ggmap) before registering their key.",
-      "This must be done for each new instance of R, or else library(ggmap);",
-      "register_google(key = 'YOUR_API_KEY') may be added to the user's .Rprofile."
+      "register_google(key = 'YOUR_API_KEY')."
     ))
   }
   if (isTRUE(background)) {
+    n_interpolations <- as.numeric(uncertainty.type == "blur")
+    if(is.numeric(uncertainty.type)){
+      n_interpolations <- uncertainty.type
+    }
     bounding_boxes <- matrix(unlist(lapply(paths.interp, function(x) {
-      apply(x[, c("mu.x", "mu.y")], 2, range, na.rm = T)
-    })), nrow = 4)
+      apply(array(x[, , c("mu.x", "mu.y")], dim = c(dim(x)[1], n_interpolations, 2)), 3, range, na.rm = T)
+    })), nrow = 4) ## left, right, bottom, top
     bounding_box <- matrix(c(
       min(bounding_boxes[1, ]), max(bounding_boxes[2, ]),
       min(bounding_boxes[3, ]), max(bounding_boxes[4, ])
     ), 2, 2)
-    center <- diag(t(bounding_box) %*% matrix(c(0.5, 0.5, 0.5, 0.5), 2, 2))
-    if (length(grep("+proj=longlat", paths.proj)) == 0) {
-      colnames(bounding_box) <- coord
-      bounding_box <- as.data.frame(bounding_box)
-      sp::coordinates(bounding_box) <- coord
-      sp::proj4string(bounding_box) <- paths.proj
-      bounding_box <- spTransform(bounding_box, CRS("+proj=longlat"))@coords
-      if (bounding_box[3] < -180) {
-        bounding_box[3] <- bounding_box[3] + 360
-        center <- diag(t(bounding_box) %*% matrix(c(0.5, 0.5, 0.5, 0.5), 2, 2))
-        center[1] <- center[1] - 360
-        bounding_box[3] <- bounding_box[3] - 360
-      } else {
-        center <- diag(t(bounding_box) %*% matrix(c(0.5, 0.5, 0.5, 0.5), 2, 2))
-      }
+    if(length(grep("+proj=longlat", paths.proj)) == 0) {
+      bounding_box_sf <- st_as_sf(as.data.frame(bounding_box), coords = c("V1", "V2"), crs = paths.proj)
+      bounding_box_ll <- st_transform(bounding_box_sf, crs = "+proj=longlat")
+      bounding_box <- st_coordinates(bounding_box_ll)
     }
-    url <- tryCatch(
-      expr = {
-        get_googlemap(center = c(t(bounding_box)), maptype = "terrain", urlonly = T)
-      },
-      error = function(e) {
-        get_googlemap(center = center, zoom = 3, maptype = "terrain", urlonly = T)
-      }
-    )
-    zoom <- as.numeric(substr(x = url, regexpr("zoom=", url)[1] + 5, regexpr("size=", url)[1] - 2)) - 1
+    center <- colMeans(bounding_box)
+    zoom <- ggmap::calc_zoom(bounding_box[, 1], bounding_box[, 2]) - 1
     background <- list("center" = center, "zoom" = zoom, "maptype" = "hybrid")
   }
   if (sum(names(background) %in% c("center", "zoom", "maptype")) == 3) {
@@ -438,54 +444,67 @@ animate_paths <- function(paths, coord = c("x", "y"), Time.name = "time",
                                   network.color.options = network.colors)
   }
   ## adjust center + scale for google map ----
-  center <- c(0, 0)
-  scale <- c(1, 1)
-  if (interpolation_type == "gam") {
-    if (class(bg[[1]])[1] == "ggmap") {
-      bb.map <- attr(bg[[1]], "bb")
-      if (bb.map[1] < -90) {
-        bb.map[1] <- -180 - bb.map[1]
-      }
-      if (bb.map[2] < -180) {
-        bb.map[2] <- 360 + bb.map[2]
-      }
-      if (bb.map[3] > 90) {
-        bb.map[3] <- 180 - bb.map[3]
-      }
-      if (bb.map[4] > 180) {
-        bb.map[4] <- bb.map[4] - 360
-      }
-
-      bb.map <- as.data.frame(t(matrix(as.numeric(bb.map), 2, 2)))
-      names(bb.map) <- c("lat", "long")
-      coordinates(bb.map) <- c("long", "lat")
-      proj4string(bb.map) <- CRS("+proj=longlat")
-      bb <- spTransform(bb.map, CRSobj = CRS(paste(
-        "+proj=merc +a=6378137 +b=6378137",
-        "+lat_ts=0.0 +lon_0=0 +x_0=0.0 +y_0=0",
-        "+k=1.0 +units=m +nadgrids=@null +wktext +no_defs"
-      )))
-      bb <- coordinates(bb)
-      center <- bb[1, c("long", "lat")]
-      scale <- 1280 / (apply(bb, 2, diff))
-      paths.interp <- sapply(1:length(paths.interp), function(i) {
-        path.i <- paths.interp[[i]]
-        if (!is.null(paths.proj)) {
-          path.i.sp.ind <- which(!is.na(path.i[, 1]))
-          path.i.sp <- as.data.frame(path.i[path.i.sp.ind, ])
-          coordinates(path.i.sp) <- c("mu.x", "mu.y")
-          proj4string(path.i.sp) <- CRS(paths.proj)
-          path.i[path.i.sp.ind, c("mu.x", "mu.y")] <-
-            spTransform(path.i.sp, CRSobj = CRS(paste("+proj=longlat")))@coords
-          path.i[path.i.sp.ind, c("mu.x", "mu.y")] <-
-            spTransform(path.i.sp, CRSobj = CRS(paste(
-              "+proj=merc +a=6378137 +b=6378137",
-              "+lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0",
-              "+k=1.0 +units=m +no_defs"
-            )))@coords
+  if(interpolation_type == "gam"){
+    if(inherits(bg[[1]], "ggmap")){
+      for(i in 1:length(paths.interp)){
+        for(rep in 1:dim(paths.interp[[i]])[2]){
+          paths.i.rep.df <- as.data.frame(paths.interp[[i]][, rep, c('mu.x', 'mu.y')])
+          paths.i.rep.df.na.ind <- unique(which(is.na(paths.i.rep.df), arr.ind = T)[, 1])
+          paths.interp[[i]][-paths.i.rep.df.na.ind, rep, c('mu.x', 'mu.y')] <- 
+            googlemap_proj(st_as_sf(paths.i.rep.df[-paths.i.rep.df.na.ind, ], 
+                                    coords = c('mu.x', 'mu.y'), crs = paths.proj), bg[[1]])
         }
-        cbind(t((t(path.i[, c("mu.x", "mu.y")]) - center) * scale), path.i[, c("se.mu.x", "se.mu.y")])
-      }, simplify = F)
+      }
+      scale <- get_googlemap_min_scale(bg[[1]])$scale
+      # bb.map <- attr(bg[[1]], "bb")
+      # if (bb.map[1] < -90) {
+      #   bb.map[1] <- -180 - bb.map[1]
+      # }
+      # if (bb.map[2] < -180) {
+      #   bb.map[2] <- 360 + bb.map[2]
+      # }
+      # if (bb.map[3] > 90) {
+      #   bb.map[3] <- 180 - bb.map[3]
+      # }
+      # if (bb.map[4] > 180) {
+      #   bb.map[4] <- bb.map[4] - 360
+      # }
+      # 
+      # bb.map <- as.data.frame(t(matrix(as.numeric(bb.map), 2, 2)))
+      # names(bb.map) <- c("lat", "long")
+      # coordinates(bb.map) <- c("long", "lat")
+      # proj4string(bb.map) <- CRS("+proj=longlat")
+      # bb <- spTransform(bb.map, CRSobj = CRS(paste(
+      #   "+proj=merc +a=6378137 +b=6378137",
+      #   "+lat_ts=0.0 +lon_0=0 +x_0=0.0 +y_0=0",
+      #   "+k=1.0 +units=m +nadgrids=@null +wktext +no_defs"
+      # )))
+      # bb <- coordinates(bb)
+      # center <- bb[1, c("long", "lat")]
+      # scale <- 1280 / (apply(bb, 2, diff))
+      # paths.interp <- sapply(1:length(paths.interp), function(i) {
+      #   path.i <- paths.interp[[i]]
+      #   if (!is.null(paths.proj)) {
+      #     for (j in 1:ncol(path.i)){
+      #     path.i.sp.ind <- which(!is.na(path.i[, j,1]))
+      #     path.i.sp <- as.data.frame(path.i[path.i.sp.ind, j, ])
+      #     coordinates(path.i.sp) <- c("mu.x", "mu.y")
+      #     proj4string(path.i.sp) <- CRS(paths.proj)
+      #     path.i[path.i.sp.ind, j,c("mu.x", "mu.y")] <-
+      #       spTransform(path.i.sp, CRSobj = CRS(paste("+proj=longlat")))@coords
+      #     path.i[path.i.sp.ind, j,c("mu.x", "mu.y")] <-
+      #       spTransform(path.i.sp, CRSobj = CRS(paste(
+      #         "+proj=merc +a=6378137 +b=6378137",
+      #         "+lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0",
+      #         "+k=1.0 +units=m +no_defs"
+      #       )))@coords
+      #     path.i[,j,c("mu.x","mu.y","se.mu.x","se.mu.y")] <- cbind(t((t(path.i[, j,c("mu.x", "mu.y")]) - center) * scale), 
+      #                        path.i[, j,c("se.mu.x", "se.mu.y")])
+      #   }}
+      #   return(path.i)
+      #   }, simplify = F)
+      
+      
       if (bg.axes) {
         message(paste0(
           "Note: Due to complications implemeting Google Maps tiles, ",
@@ -498,7 +517,7 @@ animate_paths <- function(paths, coord = c("x", "y"), Time.name = "time",
   # set start time
   message("Interpolation complete. Buildling frames.")
   start.time <- cur.time <- Sys.time()
-
+  
   # generate animation
   animation_expression(
     bg = bg, bg.axes = bg.axes, bg.misc = bg.misc, bg.opts = bg.opts, blur.size = blur.size, 
@@ -518,7 +537,7 @@ animate_paths <- function(paths, coord = c("x", "y"), Time.name = "time",
     simulation = simulation, simulation.iter = simulation.iter, tail.alpha = tail.alpha, 
     tail.colors = tail.colors, tail.length = tail.length, tail.wd = tail.wd, theme_map = theme_map, 
     time.grid = time.grid, Time.name = Time.name, uncertainty.level = uncertainty.level, 
-    whole.path = whole.path, xlim = xlim, ylim = ylim
+    uncertainty.type = uncertainty.type, whole.path = whole.path, xlim = xlim, ylim = ylim, ...
   )
   
   message(paste("Total time", round(as.numeric(Sys.time()) - as.numeric(start.time), 2), "seconds."))

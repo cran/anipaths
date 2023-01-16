@@ -34,13 +34,6 @@ test_that("error when generating animation with Google map background", {
     "Google maps now requires an API key. Once you have registered",
     "an account with Google here (https://cloud.google.com/maps-platform/),",
     "you can provide the API key via the ggmap function",
-    "register_google(key = 'YOUR_API_KEY'). This requires users update",
-    "ggmap to the most recent release of ggmap (3.0.0) and load the ggmap",
-    "package using library(ggmap) before registering their key.",
-    "This must be done for each new instance of R, or else library(ggmap);",
-    "register_google(key = 'YOUR_API_KEY') may be added to the user's .Rprofile."
+    "register_google(key = 'YOUR_API_KEY')."
   ), fixed = TRUE)
 })
-
-system("rm -r js; rm -r css; rm -r images; rm index.html")
-

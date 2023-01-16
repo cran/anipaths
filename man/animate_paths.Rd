@@ -60,9 +60,11 @@ animate_paths(
   theme_map = NULL,
   times = NULL,
   uncertainty.level = NA,
+  uncertainty.type = 1,
   whole.path = FALSE,
   xlim = NULL,
   ylim = NULL,
+  verbose = FALSE,
   ...
 )
 }
@@ -158,7 +160,7 @@ If all paths are already synchornous, another option for passing the data is to 
 
 \item{return.paths}{logical. Default is \code{FALSE}, but if \code{TRUE} then the interpolated paths are returned and no animation is produced.}
 
-\item{s_args}{Arguments to \code{mgcv::s()} for GAM-based interpolation can be passed using a named list/vector.}
+\item{s_args}{Default is \code{NULL}, in which case \code{anipaths} attempts to select a reasonable number of knots for the GAM interpolation. Alternatively, the user can provide a list of arguments to \code{mgcv::s()} the same length and order as number of unique individuals (i.e., \code{unique(paths[, ID.name])}). Each entry in the list should be a named list/vector (e.g., \code{s_args = list(list(k = 10), list(k = 12), ...)}).}
 
 \item{simulation}{logical. Generate simulation predictions to have multiple projects for the animal paths; default is \code{FALSE}.}
 
@@ -178,11 +180,15 @@ If all paths are already synchornous, another option for passing the data is to 
 
 \item{uncertainty.level}{value in (0, 1) corresponding to \code{level} at which to draw uncertainty ellipses. \code{NA} (default) results in no ellipses.}
 
+\item{uncertainty.type}{State what type of uncertainty plot 1 is default for tails more than 1 is amount of predicted trajectories for each unique individual and blurs for blur plot}
+
 \item{whole.path}{logical. If \code{TRUE} (default = \code{FALSE}), the complete interpolated trajectories will be plotted in the background of the animation. If \code{whole.path = TRUE}, consider also setting \code{tail.length = 0}.}
 
 \item{xlim}{Boundaries for plotting. If left undefined, the range of the data will be used.}
 
 \item{ylim}{Boundaries for plotting. If left undefined, the range of the data will be used.}
+
+\item{verbose}{logical; \code{TRUE} prints messages about fitting details}
 
 \item{...}{other arguments to be passed to \code{ani.options} to animation options such as the time interval between image frames.}
 }
@@ -225,7 +231,6 @@ animate_paths(
 )
 
 # animation using crawl interpolation
-library(rgdal)
 animate_paths(
   paths = vultures_paths,
   delta.t = "week",

@@ -1,0 +1,158 @@
+---
+title: "anipaths_gam"
+author: "Hugo Rosales"
+date: "6/13/2022"
+output: 
+  rmarkdown::html_vignette:
+    fig_caption: yes
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{anipaths_gam}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+```{r setup, echo = F}
+knitr::opts_chunk$set(message = F)
+```
+
+### Introduction
+
+The `anipaths` package is for displaying uncertainty of the animals' paths. It is important to see this uncertainty to have a good understanding of how precisely we know where an animal is travelling. Here I will be using several examples to display visualizations of uncertainty using a spline-based general additive model (GAM) for path interpolation. The data sets are built into the `anipaths` package. I will create animations of multiple trajectories, blur ellipses, and tails of the animals' movements.
+
+### Tails
+
+The tail animation does not depict uncertainty but it does project the animals' previous locations. There will be a line following the animals current location passing through its previous locations. In order to choose the tail animation I would need to set the `uncertainty.type` argument to a value of 1. 
+
+The package `anipaths` contains a collection of telemetry observations for turkey vultures will use to demonstrate the functionality of the package originally analyzed in:
+
+> Dodge S, Bohrer G, Bildstein K, Davidson SC, Weinzierl R, Mechard MJ, Barber D, Kays R, Brandes D, Han J (2014) Environmental drivers of variability in the movement ecology of turkey vultures (Cathartes aura) in North and South America. Philosophical Transactions of the Royal Society B 20130195.
+
+```{r tails}
+library(anipaths)
+vultures$POSIX <- as.POSIXct(vultures$timestamp, tz = "UTC")
+vultures_paths <- vultures[format(vultures$POSIX, "%Y")
+                           %in% c(2009, 2010, 2011), ] ## limit attention to 2009, 2010, 2011
+delta.t <- "week"
+#tails
+animate_paths(paths = vultures_paths, 
+              delta.t = delta.t,
+              coord = c("location.long", "location.lat"),
+              Time.name = "POSIX",
+              ID.name = "individual.local.identifier",
+              uncertainty.type = 1)
+```
+
+```{r, eval = F}
+## remove files used to generate animation
+system("rm -r index.html css js images")
+```
+
+### Multiple Trajectories
+
+Understanding uncertainty associated with interpolated trajectories is critical to gaining scientific insight into animal behavior. Depicting trajectory in animations can be challenging, but one potentially informative approach is to plot multiple hypothetical trajectories that are all consistent with the observed data. The more uncertainty, the more widespread and varied the trajectories will be both in space, and in their shape/smoothness. Put another way, instead of having one trajectory as in the previous example, it is often better to display multiple trajectories to represent uncertainty. 
+
+#### Vultures
+
+Next, I will create multiple trajectories animation with a background image. This displays additional paths that the animal could plausibly have taken. To create a background create a list object with the coordinates and map type or state `background` to be `TRUE` (requires Google Maps API key). To choose the multiple trajectories animation choose the `uncertainty.type` argument to be a value greater than one which chooses how many paths you want to display. You can choose `tail.colors` to be `unique` so that the tail colors of each animal will be different.
+
+```{r multiple_bg, eval = F}
+library(ggmap)
+background <- list(center = c(-90, 10), 
+                   zoom = 3, 
+                   maptype = "satellite")
+delta.t <- "week"
+animate_paths(paths = vultures_paths, 
+              delta.t = delta.t,
+              coord = c("location.long", "location.lat"),
+              Time.name = "POSIX",
+              ID.name = "individual.local.identifier",
+              uncertainty.type = 5,
+              tail.colors = "unique",
+              tail.wd = 0.7,
+              background = background)
+```
+
+```{r, eval = F}
+## remove files used to generate animation
+system("rm -r index.html css js images")
+```
+
+#### Blue and Fin Whales
+
+I will be using a different data set of blue and fin whales to demonstrate multiple trajectories but with more uncertainty. This data set uses satellite telemetry to study blue and fin whales in Southern California from 2014-2015: 
+
+> Irvine LM, Winsor MH, Follett TM, Mate BR, Palacios DM (2020) An at-sea assessment of Argos location accuracy for three species of large whales, and the effect of deep-diving behavior on location error. Animal Biotelemetry 8:20.
+
+```{r multi_whales, eval = F}
+whales$POSIX <- as.POSIXct(whales$timestamp)
+whales_paths <- whales[format(whales$POSIX, "%Y") %in% c(2014),]
+delta.t <- 3600*12
+animate_paths(paths = whales_paths,
+              delta.t = delta.t,
+              coord = c("location.long", "location.lat"),
+              Time.name = "POSIX",
+              ID.name = "individual.local.identifier",
+              uncertainty.type = 5,
+              tail.colors = "unique",
+              tail.wd = 0.5,
+              background = TRUE)
+```
+
+
+```{r, eval = F}
+## remove files used to generate animation
+system("rm -r index.html css js images")
+```
+
+
+### Blurred Ellipses
+
+#### Vultures
+
+Third, I will use the same vultures data set but this time I will display blurred ellipses around a point to show the uncertainty of a specific animal. Unfortunately, the background image does not yet work with blurred ellipses. To choose a blurred ellipses animation, set the `uncertainty.type` argument to a value of `blur`.
+
+```{r blur}
+#blur ellipses
+delta.t <- "week"
+animate_paths(paths = vultures_paths, 
+              delta.t = delta.t,
+              coord = c("location.long", "location.lat"),
+              Time.name = "POSIX",
+              ID.name = "individual.local.identifier",
+              uncertainty.type = "blur",
+              tail.colors = "red") 
+```
+
+```{r, eval = F}
+## remove files used to generate animation
+system("rm -r index.html css js images")
+```
+
+
+#### Blue and Fin Whales
+
+The whales data set contains more trajectory uncertainty than the vultures relative the observed spatial scale. The blurred ellipses will be larger in this animation making it easier to see than the previous example. 
+
+```{r blue_whales}
+library(ggmap)
+whales$POSIX <- as.POSIXct(whales$timestamp, tz = "GMT")
+whales_paths <- whales[format(whales$POSIX, "%Y") %in% 2015,]
+delta.t <- 3600*12
+animate_paths(paths = whales_paths,
+              delta.t = delta.t,
+              coord = c("location.long", "location.lat"),
+              Time.name = "POSIX",
+              ID.name = "individual.local.identifier",
+              uncertainty.type = "blur",
+              tail.colors = "green")
+```
+
+```{r}
+## remove files used to generate animation
+system("rm -r index.html css js images")
+```
+
+
+
+
+

@@ -35,19 +35,8 @@ interpolated_paths <-
     coord = c("location.long", "location.lat"),
     Time.name = "POSIX",
     ID.name = "individual.local.identifier",
-    max.knots = 13,
-    return.paths = TRUE
-  )
-interpolated_paths_gp <-
-  animate_paths(
-    paths = vultures_paths,
-    delta.t = 3600 * 6,
-    coord = c("location.long", "location.lat"),
-    Time.name = "POSIX",
-    ID.name = "individual.local.identifier",
-    max.knots = 3 * 13,
+    s_args = rep(list(list(k = 10)), 6),
     return.paths = TRUE
   )
 plot(interpolated_paths, i = 2)
-plot(interpolated_paths_gp, i = 2, level = 0.01)
 }

@@ -12,29 +12,42 @@
 
 <meta name="author" content="Henry Scharf" />
 
-<meta name="date" content="2021-05-16" />
+<meta name="date" content="2023-01-08" />
 
 <title>anipaths: spline-based interpolation</title>
 
-<script src="data:application/javascript;base64,Ly8gUGFuZG9jIDIuOSBhZGRzIGF0dHJpYnV0ZXMgb24gYm90aCBoZWFkZXIgYW5kIGRpdi4gV2UgcmVtb3ZlIHRoZSBmb3JtZXIgKHRvCi8vIGJlIGNvbXBhdGlibGUgd2l0aCB0aGUgYmVoYXZpb3Igb2YgUGFuZG9jIDwgMi44KS4KZG9jdW1lbnQuYWRkRXZlbnRMaXN0ZW5lcignRE9NQ29udGVudExvYWRlZCcsIGZ1bmN0aW9uKGUpIHsKICB2YXIgaHMgPSBkb2N1bWVudC5xdWVyeVNlbGVjdG9yQWxsKCJkaXYuc2VjdGlvbltjbGFzcyo9J2xldmVsJ10gPiA6Zmlyc3QtY2hpbGQiKTsKICB2YXIgaSwgaCwgYTsKICBmb3IgKGkgPSAwOyBpIDwgaHMubGVuZ3RoOyBpKyspIHsKICAgIGggPSBoc1tpXTsKICAgIGlmICghL15oWzEtNl0kL2kudGVzdChoLnRhZ05hbWUpKSBjb250aW51ZTsgIC8vIGl0IHNob3VsZCBiZSBhIGhlYWRlciBoMS1oNgogICAgYSA9IGguYXR0cmlidXRlczsKICAgIHdoaWxlIChhLmxlbmd0aCA+IDApIGgucmVtb3ZlQXR0cmlidXRlKGFbMF0ubmFtZSk7CiAgfQp9KTsK"></script>
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
 
 <style type="text/css">
-  code{white-space: pre-wrap;}
-  span.smallcaps{font-variant: small-caps;}
-  span.underline{text-decoration: underline;}
-  div.column{display: inline-block; vertical-align: top; width: 50%;}
-  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-  ul.task-list{list-style: none;}
-    </style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
 
 
 <style type="text/css">
-  code {
-    white-space: pre;
-  }
-  .sourceCode {
-    overflow: visible;
-  }
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
 </style>
 <style type="text/css" data-origin="pandoc">
 pre > code.sourceCode { white-space: pre; position: relative; }
@@ -52,55 +65,54 @@ pre > code.sourceCode { white-space: pre-wrap; }
 pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
-  { counter-reset: source-line 0; }
+{ counter-reset: source-line 0; }
 pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
+{ position: relative; left: -4em; counter-increment: source-line; }
 pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-    color: #aaaaaa;
-  }
-pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
 div.sourceCode
-  {   }
+{ }
 @media screen {
 pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
-code span.al { color: #ff0000; font-weight: bold; } /* Alert */
-code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
-code span.at { color: #7d9029; } /* Attribute */
-code span.bn { color: #40a070; } /* BaseN */
-code span.bu { } /* BuiltIn */
-code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
-code span.ch { color: #4070a0; } /* Char */
-code span.cn { color: #880000; } /* Constant */
-code span.co { color: #60a0b0; font-style: italic; } /* Comment */
-code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
-code span.do { color: #ba2121; font-style: italic; } /* Documentation */
-code span.dt { color: #902000; } /* DataType */
-code span.dv { color: #40a070; } /* DecVal */
-code span.er { color: #ff0000; font-weight: bold; } /* Error */
-code span.ex { } /* Extension */
-code span.fl { color: #40a070; } /* Float */
-code span.fu { color: #06287e; } /* Function */
-code span.im { } /* Import */
-code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
-code span.kw { color: #007020; font-weight: bold; } /* Keyword */
-code span.op { color: #666666; } /* Operator */
-code span.ot { color: #007020; } /* Other */
-code span.pp { color: #bc7a00; } /* Preprocessor */
-code span.sc { color: #4070a0; } /* SpecialChar */
-code span.ss { color: #bb6688; } /* SpecialString */
-code span.st { color: #4070a0; } /* String */
-code span.va { color: #19177c; } /* Variable */
-code span.vs { color: #4070a0; } /* VerbatimString */
-code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
-
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
 </style>
 <script>
 // apply pandoc div.sourceCode style to pre.sourceCode instead
@@ -127,7 +139,187 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 
 
 
-<link rel="stylesheet" href="data:text/css,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" type="text/css" />
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
 
 
 
@@ -141,84 +333,116 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 
 <h1 class="title toc-ignore">anipaths: spline-based interpolation</h1>
 <h4 class="author">Henry Scharf</h4>
-<h4 class="date">2021-05-16</h4>
+<h4 class="date">2023-01-08</h4>
 
 
 <div id="TOC">
 <ul>
-<li><a href="#animating-animal-trajectories">Animating animal trajectories</a>
+<li><a href="#animating-animal-trajectories" id="toc-animating-animal-trajectories">Animating animal trajectories</a>
 <ul>
-<li><a href="#using-background-maps">Using background maps</a></li>
-<li><a href="#adding-individual-level-covariate-information">Adding individual-level covariate information</a></li>
-<li><a href="#animating-synchronous-data">Animating synchronous data</a></li>
-<li><a href="#output-formats">Output formats</a></li>
+<li><a href="#using-background-maps" id="toc-using-background-maps">Using background maps</a></li>
+<li><a href="#adding-individual-level-covariate-information" id="toc-adding-individual-level-covariate-information">Adding
+individual-level covariate information</a></li>
+<li><a href="#output-formats" id="toc-output-formats">Output
+formats</a></li>
 </ul></li>
-<li><a href="#checking-the-interpolation">Checking the interpolation</a></li>
-<li><a href="#additional-features">Additional features</a>
+<li><a href="#checking-the-interpolation" id="toc-checking-the-interpolation">Checking the interpolation</a></li>
+<li><a href="#additional-features" id="toc-additional-features">Additional features</a>
 <ul>
-<li><a href="#showing-location-uncertainty-beta">Showing location uncertainty (beta)</a></li>
-<li><a href="#showing-complete-trajectories">Showing complete trajectories</a></li>
-<li><a href="#dimming-selected-individuals">Dimming selected individuals</a></li>
-<li><a href="#showing-relational-information-beta">Showing relational information (beta)</a></li>
+<li><a href="#showing-complete-trajectories" id="toc-showing-complete-trajectories">Showing complete
+trajectories</a></li>
+<li><a href="#dimming-selected-individuals" id="toc-dimming-selected-individuals">Dimming selected
+individuals</a></li>
+<li><a href="#showing-relational-information-beta" id="toc-showing-relational-information-beta">Showing relational
+information (beta)</a></li>
 </ul></li>
 </ul>
 </div>
 
 <div id="animating-animal-trajectories" class="section level2">
 <h2>Animating animal trajectories</h2>
-<p>The package <code>anipaths</code> contains a collection of telemetry observations for turkey vultures originally analyzed in:</p>
+<p>The package <code>anipaths</code> contains a collection of telemetry
+observations for turkey vultures originally analyzed in:</p>
 <blockquote>
-<p>Dodge S, Bohrer G, Bildstein K, Davidson SC, Weinzierl R, Mechard MJ, Barber D, Kays R, Brandes D, Han J (2014) Environmental drivers of variability in the movement ecology of turkey vultures (Cathartes aura) in North and South America. Philosophical Transactions of the Royal Society B 20130195.</p>
+<p>Dodge S, Bohrer G, Bildstein K, Davidson SC, Weinzierl R, Mechard MJ,
+Barber D, Kays R, Brandes D, Han J (2014) Environmental drivers of
+variability in the movement ecology of turkey vultures (Cathartes aura)
+in North and South America. Philosophical Transactions of the Royal
+Society B 20130195.</p>
 </blockquote>
-<p>To animate the locations, we first need to create a time stamp variable of class <code>numeric</code> or <code>POSIX</code>. One advantage to using the <code>POSIX</code> class is that we can specify the gaps in the interpolation (<code>delta.t</code>) using convenient character strings like <code>&quot;hour&quot;</code> or <code>&quot;week&quot;</code>.</p>
+<p>To animate the locations, we first need to create a time stamp
+variable of class <code>numeric</code> or <code>POSIX</code>. One
+advantage to using the <code>POSIX</code> class is that we can specify
+the gaps in the interpolation (<code>delta.t</code>) using convenient
+character strings like <code>&quot;hour&quot;</code> or <code>&quot;week&quot;</code>.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(anipaths)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>vultures<span class="sc">$</span>POSIX <span class="ot">&lt;-</span> <span class="fu">as.POSIXct</span>(vultures<span class="sc">$</span>timestamp, <span class="at">tz =</span> <span class="st">&quot;UTC&quot;</span>)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>vultures_paths <span class="ot">&lt;-</span> vultures[<span class="fu">format</span>(vultures<span class="sc">$</span>POSIX, <span class="st">&quot;%Y&quot;</span>) <span class="sc">==</span> <span class="dv">2009</span>, ] <span class="do">## limit attention to 2009</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>delta.t <span class="ot">&lt;-</span> <span class="st">&quot;day&quot;</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">delta.t =</span> delta.t,</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>)</span></code></pre></div>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">delta.t =</span> <span class="st">&quot;day&quot;</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>)</span></code></pre></div>
 <div id="using-background-maps" class="section level3">
 <h3>Using background maps</h3>
-<p>Often it may be useful to add a map of the relevant study area. There are lots of ways to incorporate a map. The simplest way is to set <code>background</code> to <code>TRUE</code>, in which case <code>anipaths</code> will do the best it can to select a map based on the data. In the next example, we’ve changed the time step to help the animations load a little faster.</p>
+<p>Often it may be useful to add a map of the relevant study area. There
+are lots of ways to incorporate a map. The simplest way is to set
+<code>background</code> to <code>TRUE</code>, in which case
+<code>anipaths</code> will do the best it can to select a map based on
+the data. In the next example, we’ve changed the time step to help the
+animations load a little faster.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggmap)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>delta.t <span class="ot">&lt;-</span> <span class="st">&quot;week&quot;</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>              <span class="at">delta.t =</span> delta.t,</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">background =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
-<p>You can also give a long/lat <code>location</code>, <code>zoom</code> level (3-21; see <code>?ggmap::get_map()</code>), and <code>maptype</code> (<code>satellite</code>, <code>terrain</code>, <code>hybrid</code>) to be passed to <code>ggmap::get_map()</code>, and <code>anipaths</code> will make a background for you.</p>
-<p>As shown below, the value of <code>delta.t</code> can be specified as a numeric, which will be interpreted in whatever units used by <code>as.numeric(paths[&#39;Time.name&#39;])</code> (in our case, this is seconds).</p>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>              <span class="at">delta.t =</span> <span class="dv">2</span> <span class="sc">*</span> <span class="dv">24</span> <span class="sc">*</span> <span class="dv">60</span> <span class="sc">*</span> <span class="dv">60</span>, <span class="do">## number of seconds in two days</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">background =</span> <span class="cn">TRUE</span>, <span class="at">img.name =</span> <span class="st">&quot;background_TRUE&quot;</span>)</span></code></pre></div>
+<p>You can also give a long/lat <code>location</code>, <code>zoom</code>
+level (3-21; see <code>?ggmap::get_map()</code>), and
+<code>maptype</code> (<code>satellite</code>, <code>terrain</code>,
+<code>hybrid</code>) to be passed to <code>ggmap::get_map()</code>, and
+<code>anipaths</code> will make a background for you.</p>
+<p>As shown below, the value of <code>delta.t</code> can be specified as
+a numeric, which will be interpreted in whatever units used by
+<code>as.numeric(paths[&#39;Time.name&#39;])</code> (in our case, this is
+seconds).</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>vultures_paths <span class="ot">&lt;-</span> vultures[<span class="fu">format</span>(vultures<span class="sc">$</span>POSIX, <span class="st">&quot;%Y&quot;</span>) <span class="sc">==</span> <span class="dv">2009</span><span class="sc">:</span><span class="dv">2010</span>, ]</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>delta.t <span class="ot">&lt;-</span> <span class="dv">3600</span><span class="sc">*</span><span class="dv">24</span><span class="sc">*</span><span class="dv">2</span> <span class="do">## number of seconds in two days</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>background <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">center =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">90</span>, <span class="dv">10</span>), </span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>                   <span class="at">zoom =</span> <span class="dv">3</span>, </span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>                   <span class="at">maptype =</span> <span class="st">&quot;satellite&quot;</span>)</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">delta.t =</span> delta.t,</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>              <span class="at">background =</span> background)</span></code></pre></div>
-<p>You can also supply your own background image. The projection and units should match the data.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>delta.t <span class="ot">&lt;-</span> <span class="st">&quot;week&quot;</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>background <span class="ot">&lt;-</span> rworldmap<span class="sc">::</span><span class="fu">getMap</span>(<span class="at">resolution =</span> <span class="st">&quot;coarse&quot;</span>)</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>sp<span class="sc">::</span><span class="fu">proj4string</span>(background) <span class="do">## matches default projection in animate_paths()</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">delta.t =</span> delta.t,</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>              <span class="at">background =</span> background)</span></code></pre></div>
-<p>The function <code>animate_paths()</code> must project the data to match Google’s map tiles, so if your data aren’t in long/lat format, make sure you update the <code>paths.proj</code> variable with the correct string.</p>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>background <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">center =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">90</span>, <span class="dv">10</span>), </span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>                   <span class="at">zoom =</span> <span class="dv">3</span>, </span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>                   <span class="at">maptype =</span> <span class="st">&quot;satellite&quot;</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">delta.t =</span> <span class="dv">3</span> <span class="sc">*</span> <span class="dv">24</span> <span class="sc">*</span> <span class="dv">60</span> <span class="sc">*</span> <span class="dv">60</span>, <span class="do">## number of seconds in three days</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>              <span class="at">background =</span> background, <span class="at">img.name =</span> <span class="st">&quot;background_google&quot;</span>)</span></code></pre></div>
+<p>You can also supply your own background image. The projection and
+units should match the data.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>background <span class="ot">&lt;-</span> rworldmap<span class="sc">::</span><span class="fu">getMap</span>(<span class="at">resolution =</span> <span class="st">&quot;coarse&quot;</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>sp<span class="sc">::</span><span class="fu">proj4string</span>(background) <span class="do">## matches default projection in animate_paths()</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co"># background &lt;- data.frame(x = range(vultures_paths$location.long)[c(1, 2, 2, 1, 1)],</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co">#                          y = range(vultures_paths$location.lat)[c(1, 1, 2, 2, 1)])</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">delta.t =</span> <span class="st">&quot;week&quot;</span>,</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>              <span class="at">background =</span> background, <span class="at">img.name =</span> <span class="st">&quot;background_user&quot;</span>)</span></code></pre></div>
+<p>The function <code>animate_paths()</code> must project the data to
+match Google’s map tiles, so if your data aren’t in long/lat format,
+make sure you update the <code>paths.proj</code> variable with the
+correct string.</p>
 </div>
 <div id="adding-individual-level-covariate-information" class="section level3">
 <h3>Adding individual-level covariate information</h3>
-<p>If you have a covariate of interest for each individual, <code>animate_paths()</code> can display that information as a colored ring around each individual. We don’t have any natural individual-level covariates available for the vultures, so we’ll make one up for the purposed of demonstration. The following code assigns each individual a random interval for each of three behaviors: <em>exploratory</em>, <em>directed</em>, and <em>stationary</em>.</p>
+<p>If you have a covariate of interest for each individual,
+<code>animate_paths()</code> can display that information as a colored
+ring around each individual. We don’t have any natural individual-level
+covariates available for the vultures, so we’ll make one up for the
+purposed of demonstration. The following code assigns each individual a
+random interval for each of three behaviors: <em>exploratory</em>,
+<em>directed</em>, and <em>stationary</em>.</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>behaviors <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;exploratory&quot;</span>, <span class="st">&quot;directed&quot;</span>, <span class="st">&quot;stationary&quot;</span>)</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>vultures_paths<span class="sc">$</span>behavior <span class="ot">&lt;-</span> </span>
@@ -227,7 +451,14 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    switches <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fu">sort</span>(<span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(v_id), <span class="dv">2</span>)), <span class="fu">nrow</span>(v_id))</span>
 <span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rep</span>(behaviors[<span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="dv">3</span>)], <span class="fu">diff</span>(switches))</span>
 <span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  }))</span></code></pre></div>
-<p>The covariates have now been appended to the <code>paths</code> data frame. We can let <code>animate_paths()</code> know we would like it to display this information by setting the argument <code>covariate</code> to match the name of the appropriate column in <code>paths</code> (i.e., <code>behavior</code>). The default colors are a gray scale. Any collection of colors can be provided (e.g., <code>covariate.colors = viridis::viridis(3)</code>) which will be turned into a palette to match the support of the covariate.</p>
+<p>The covariates have now been appended to the <code>paths</code> data
+frame. We can let <code>animate_paths()</code> know we would like it to
+display this information by setting the argument <code>covariate</code>
+to match the name of the appropriate column in <code>paths</code> (i.e.,
+<code>behavior</code>). The default colors are a gray scale. Any
+collection of colors can be provided (e.g.,
+<code>covariate.colors = viridis::viridis(3)</code>) which will be
+turned into a palette to match the support of the covariate.</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>delta.t <span class="ot">&lt;-</span> <span class="st">&quot;day&quot;</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>background <span class="ot">&lt;-</span> rworldmap<span class="sc">::</span><span class="fu">getMap</span>(<span class="at">resolution =</span> <span class="st">&quot;coarse&quot;</span>)</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>sp<span class="sc">::</span><span class="fu">proj4string</span>(background)</span>
@@ -237,71 +468,91 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
 <span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">covariate =</span> <span class="st">&quot;behavior&quot;</span>, <span class="at">covariate.colors =</span> viridis<span class="sc">::</span><span class="fu">viridis</span>(<span class="dv">3</span>),</span>
 <span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>,</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>              <span class="at">background =</span> background, <span class="at">s_args =</span> <span class="fu">c</span>(<span class="at">k =</span> <span class="dv">80</span>))</span></code></pre></div>
-<p><em>Note</em>: if a covariate is represented numerically but should be treated as a factor, changing the class using <code>as.factor()</code> should prevent <code>animate_paths()</code> from interpolating to “intermediate” values (e.g., if male and female are coded as 0 and 1, defining the column of the data frame as a factor will constrain individuals to only take on values of 0 and 1).</p>
-</div>
-<div id="animating-synchronous-data" class="section level3">
-<h3>Animating synchronous data</h3>
-<p>This situation may arise, for example, when a user wishes to employ <code>anipaths</code> to produce visualizations of realizations generated from a discrete-time movement model. To demonstrate how to use <code>animate_paths()</code> to animate already synchronous paths, bypassing the spline-based interpolation, we can use <code>animate_paths()</code> to produce synchronized paths (setting <code>return.paths = TRUE</code>), and then pretend we had those synchronized paths from the beginning. In this case, we will also pretend we have covariates associated with those synchronized times.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>delta.t <span class="ot">&lt;-</span> <span class="dv">3600</span><span class="sc">*</span><span class="dv">24</span><span class="sc">*</span><span class="dv">3</span> <span class="do">## 3 days between synchronized observations</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>background <span class="ot">&lt;-</span> rworldmap<span class="sc">::</span><span class="fu">getMap</span>(<span class="at">resolution =</span> <span class="st">&quot;coarse&quot;</span>)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>sp<span class="sc">::</span><span class="fu">proj4string</span>(background)</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>behaviors <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;exploratory&quot;</span>, <span class="st">&quot;directed&quot;</span>, <span class="st">&quot;stationary&quot;</span>)</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>vultures_paths<span class="sc">$</span>behavior <span class="ot">&lt;-</span> </span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unlist</span>(<span class="fu">sapply</span>(<span class="fu">unique</span>(vultures_paths<span class="sc">$</span>individual.local.identifier), <span class="cf">function</span>(id){</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    v_id <span class="ot">&lt;-</span> vultures_paths[vultures_paths<span class="sc">$</span>individual.local.identifier <span class="sc">==</span> id, ]</span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    switches <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fu">sort</span>(<span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(v_id), <span class="dv">2</span>)), <span class="fu">nrow</span>(v_id))</span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rep</span>(behaviors[<span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="dv">3</span>)], <span class="fu">diff</span>(switches))</span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  }))</span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>synchro_paths <span class="ot">&lt;-</span> <span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, <span class="at">s_args =</span> <span class="fu">c</span>(<span class="at">k =</span> <span class="dv">70</span>),</span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>                               <span class="at">delta.t =</span> delta.t, <span class="at">covariate =</span> <span class="st">&quot;behavior&quot;</span>,</span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>                               <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>                               <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>, <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>                               <span class="at">return.paths =</span> T)</span></code></pre></div>
-<p>Now we input our synchronized paths (a list of matrices all with the same number of rows) into the <code>paths</code> argument, the synchronized times in the <code>times</code> argument, and the synchronized covariates in the <code>covariate</code> argument. Naming the first element of the <code>covariate</code> list passes the label through to the legend in the animation.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(synchro_paths<span class="sc">$</span>covariate.interp) <span class="ot">&lt;-</span> <span class="st">&quot;behavior&quot;</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> synchro_paths<span class="sc">$</span>paths.interp, <span class="at">times =</span> synchro_paths<span class="sc">$</span>time.grid, </span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>              <span class="at">covariate =</span> synchro_paths<span class="sc">$</span>covariate.interp, </span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>              <span class="at">covariate.colors =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="at">background =</span> background)</span></code></pre></div>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>              <span class="at">background =</span> background, <span class="at">img.name =</span> <span class="st">&quot;covariates&quot;</span>)</span></code></pre></div>
+<p><em>Note</em>: if a covariate is represented numerically but should
+be treated as a factor, changing the class using
+<code>as.factor()</code> should prevent <code>animate_paths()</code>
+from interpolating to “intermediate” values (e.g., if male and female
+are coded as 0 and 1, defining the column of the data frame as a factor
+will constrain individuals to only take on values of 0 and 1).</p>
 </div>
 <div id="output-formats" class="section level3">
 <h3>Output formats</h3>
-<p>The default format for displaying the animation is an <code>index.html</code> file. This is great for broad functionality, and the generated images may be used as the basis of a variety of other animation formats (e.g., the “animate” package in LaTeX). If you have <code>ffmpeg</code> installed on your system, you can also set <code>method = &quot;mp4&quot;</code> to create a stand-alone video that is easy to share with others. For more information, see <a href="https://www.ffmpeg.org/" class="uri">https://www.ffmpeg.org/</a>.</p>
+<p>The default format for displaying the animation is an
+<code>index.html</code> file. This is great for broad functionality, and
+the generated images may be used as the basis of a variety of other
+animation formats (e.g., the “animate” package in LaTeX). If you have
+<code>ffmpeg</code> installed on your system, you can also set
+<code>method = &quot;mp4&quot;</code> to create a stand-alone video that is easy
+to share with others. For more information, see <a href="https://www.ffmpeg.org/" class="uri">https://www.ffmpeg.org/</a>.</p>
 </div>
 </div>
 <div id="checking-the-interpolation" class="section level2">
 <h2>Checking the interpolation</h2>
-<p>As a way to check that <code>anipaths</code> is producing reasonable interpolations of the telemetry observations, a generic <code>plot()</code> function is provided that takes an argument of class <code>paths_animation</code> produced by calling <code>animate_paths()</code> with <code>return.paths = TRUE</code>. See <code>example(plot.paths_animation)</code>. Adjusting the parameters of the interpolation can be done by modifying the <code>s_args</code> argument. As a general rule, if the interpolated paths look “too smooth”, try increasing the number of knots using <code>s_args = c(k = ...)</code>.</p>
+<p>As a way to check that <code>anipaths</code> is producing reasonable
+interpolations of the telemetry observations, a generic
+<code>plot()</code> function is provided that takes an argument of class
+<code>paths_animation</code> produced by calling
+<code>animate_paths()</code> with <code>return.paths = TRUE</code>. See
+<code>example(plot.paths_animation)</code>. Adjusting the parameters of
+the interpolation can be done by modifying the <code>s_args</code>
+argument.</p>
+<p>The following code demonstrates the use of <code>s_args</code> by
+intentionally over-smoothing the trajectories.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>interp <span class="ot">&lt;-</span> <span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>                        <span class="at">delta.t =</span> <span class="st">&quot;day&quot;</span>,</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>                        <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>                        <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>                        <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>                        <span class="at">s_args =</span> <span class="fu">rep</span>(<span class="fu">list</span>(<span class="fu">list</span>(<span class="at">k =</span> <span class="dv">10</span>)), <span class="dv">10</span>),</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>                        <span class="at">return.paths =</span> T)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(interp, <span class="at">i =</span> <span class="dv">2</span>)</span></code></pre></div>
+<p>This piece of code shows the number of observations for each
+individual vulture, in the same order they are handled by
+<code>animate_paths()</code> (i.e., the same order as
+<code>unique(vultures_paths$individual.local.identifier)</code>). The
+wide variability in duration and number of observations required
+individual-specific numbers of knots in the GAM interpolation. In this
+case, the number of observations divided by 4 is used as the number of
+knots for each individual, with a maximum of 306 knots because each
+frame in the animation corresponds to a single day between March 1 and
+December 31.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>obs_counts <span class="ot">&lt;-</span> <span class="fu">merge</span>(<span class="fu">data.frame</span>(<span class="at">individual.local.identifier =</span> <span class="fu">unique</span>(vultures_paths<span class="sc">$</span>individual.local.identifier)), </span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">aggregate</span>(timestamp <span class="sc">~</span> individual.local.identifier, <span class="at">data =</span> vultures_paths, <span class="at">FUN =</span> length),</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>                    <span class="at">by =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, <span class="at">sort =</span> F)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>obs_counts</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>s_args <span class="ot">&lt;-</span> <span class="fu">lapply</span>(obs_counts<span class="sc">$</span>timestamp, <span class="cf">function</span>(x) <span class="fu">c</span>(<span class="at">k =</span> <span class="fu">floor</span>(<span class="fu">min</span>(x <span class="sc">/</span> <span class="dv">4</span>, <span class="dv">306</span>))))</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>interp <span class="ot">&lt;-</span> <span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>                        <span class="at">delta.t =</span> <span class="st">&quot;day&quot;</span>,</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>                        <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>                        <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>                        <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>,</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>                        <span class="at">s_args =</span> s_args,</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>                        <span class="at">return.paths =</span> T)</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(interp, <span class="at">i =</span> <span class="dv">2</span>)</span></code></pre></div>
+<p>As of version 0.10.2, the default value for the number of knots also
+works well for this example.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>interp <span class="ot">&lt;-</span> <span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>                        <span class="at">delta.t =</span> <span class="st">&quot;day&quot;</span>,</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>                        <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>                        <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>                        <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>                        <span class="at">return.paths =</span> T, <span class="at">verbose =</span> T)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(interp, <span class="at">i =</span> <span class="dv">2</span>)</span></code></pre></div>
 </div>
 <div id="additional-features" class="section level2">
 <h2>Additional features</h2>
-<div id="showing-location-uncertainty-beta" class="section level3">
-<h3>Showing location uncertainty (beta)</h3>
-<p>Uncertainty about the depicted location of each individual is computed as part of the interpolation procedure. Error ellipses representing a Gaussian approximation to the uncertainty can be added by specifying a quantile level for the argument <code>uncertainty.level</code>. These ellipses should really only be interpreted qualitatively, but may be useful for communicating when there is significant uncertainty about the location of an individual (perhaps due to sparse observations in time).</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>vultures_paths <span class="ot">&lt;-</span> vultures[<span class="fu">format</span>(vultures<span class="sc">$</span>POSIX, <span class="st">&quot;%Y&quot;</span>) <span class="sc">==</span> <span class="dv">2009</span> <span class="sc">&amp;</span> </span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>                             vultures<span class="sc">$</span>location.lat <span class="sc">&gt;</span> <span class="dv">32</span> <span class="sc">&amp;</span> </span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>                             vultures<span class="sc">$</span>individual.local.identifier <span class="sc">!=</span> <span class="st">&quot;Mark&quot;</span>, ]</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>delta.t <span class="ot">&lt;-</span> <span class="st">&quot;day&quot;</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>background <span class="ot">&lt;-</span> rworldmap<span class="sc">::</span><span class="fu">getMap</span>(<span class="at">resolution =</span> <span class="st">&quot;coarse&quot;</span>)</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>sp<span class="sc">::</span><span class="fu">proj4string</span>(background) </span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">delta.t =</span> delta.t,</span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>              <span class="at">background =</span> background, <span class="at">uncertainty.level =</span> <span class="fl">0.99</span>)</span></code></pre></div>
-</div>
 <div id="showing-complete-trajectories" class="section level3">
 <h3>Showing complete trajectories</h3>
-<p>Set <code>whole.path = TRUE</code>. It is not required, but probably clearer visually, if we also set <code>tail.length = 0</code>.</p>
+<p>Set <code>whole.path = TRUE</code>. It is not required, but probably
+clearer visually, if we also set <code>tail.length = 0</code>.</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>              <span class="at">delta.t =</span> delta.t,</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
 <span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </span>
 <span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">background =</span> background, </span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">whole.path =</span> <span class="cn">TRUE</span>, <span class="at">tail.length =</span> <span class="dv">0</span>)</span></code></pre></div>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">whole.path =</span> <span class="cn">TRUE</span>, <span class="at">tail.length =</span> <span class="dv">0</span>, <span class="at">img.name =</span> <span class="st">&quot;whole_traj&quot;</span>)</span></code></pre></div>
 </div>
 <div id="dimming-selected-individuals" class="section level3">
 <h3>Dimming selected individuals</h3>
@@ -312,12 +563,18 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
 <span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
 <span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">background =</span> background, <span class="at">dimmed =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">5</span>))</span></code></pre></div>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">background =</span> background, <span class="at">dimmed =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">5</span>), <span class="at">img.name =</span> <span class="st">&quot;dim&quot;</span>)</span></code></pre></div>
 </div>
 <div id="showing-relational-information-beta" class="section level3">
 <h3>Showing relational information (beta)</h3>
-<p>It is also possible to visualize dynamic pair-wise relational information with <code>anipaths</code>. This information needs to be coded as an array of adjacency matrices (binary and weighted edges allowed, no support yet for directed information). If the network information is on a different time scale than the position information, it will be interpolated using smoothing splines to match.</p>
-<p>We don’t have existing relationships among the vultures to display, so we’ll make some up for the purposes of demonstration.</p>
+<p>It is also possible to visualize dynamic pair-wise relational
+information with <code>anipaths</code>. This information needs to be
+coded as an array of adjacency matrices (binary and weighted edges
+allowed, no support yet for directed information). If the network
+information is on a different time scale than the position information,
+it will be interpolated using smoothing splines to match.</p>
+<p>We don’t have existing relationships among the vultures to display,
+so we’ll make some up for the purposes of demonstration.</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>vultures_paths <span class="ot">&lt;-</span> vultures[<span class="fu">format</span>(vultures<span class="sc">$</span>POSIX, <span class="st">&quot;%Y&quot;</span>) <span class="sc">==</span> <span class="dv">2009</span>, ]</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>n_indiv <span class="ot">&lt;-</span> <span class="fu">length</span>(<span class="fu">unique</span>(vultures_paths<span class="sc">$</span>individual.local.identifier))</span>
@@ -337,7 +594,9 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
 <span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
 <span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>,</span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">background =</span> background, <span class="at">network =</span> network, <span class="at">network.times =</span> network.times)</span></code></pre></div>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">background =</span> background, <span class="at">network =</span> network, <span class="at">network.times =</span> network.times,</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">img.name =</span> <span class="st">&quot;network&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system</span>(<span class="st">&quot;rm -r js; rm -r css; rm -r images; rm index.html&quot;</span>)</span></code></pre></div>
 </div>
 </div>
 

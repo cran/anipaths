@@ -62,6 +62,7 @@ animation_expression(
   time.grid,
   Time.name,
   uncertainty.level,
+  uncertainty.type,
   whole.path,
   xlim,
   ylim,
@@ -81,7 +82,7 @@ animation_expression(
 
 \item{cliques}{A list of colors for network projections}
 
-\item{color_covariate_function}{a function to generate color for coraviate interpolation}
+\item{color_covariate_function}{a function to generate color for covariate interpolation}
 
 \item{coord}{A character vector of length 2 giving the names of the longitude/easting and latitude/northing columns in the \code{paths} \code{data.frame} (in that order). This is required if \code{paths} is not a \code{SpatialPointsDataFrame}.}
 
@@ -95,7 +96,7 @@ animation_expression(
 
 \item{covariate.name}{name of covariate interpolation}
 
-\item{covariate.range}{the range of covaraite interpolation}
+\item{covariate.range}{the range of covariate interpolation}
 
 \item{covariate.thresh}{if changed from its default value of \code{NULL}, the interpolated value of the covariate will be binarized based on this numeric value.}
 
@@ -182,6 +183,8 @@ animation_expression(
 \item{Time.name}{The name of the columns in \code{paths} gving the observation times. This column must be of class \code{POSIXt}, or numeric.}
 
 \item{uncertainty.level}{value in (0, 1) corresponding to \code{level} at which to draw uncertainty ellipses. \code{NA} (default) results in no ellipses.}
+
+\item{uncertainty.type}{State what type of uncertainty plot 1 is default for tails more than 1 is amount of predicted trajectories for each unique individual and blurs for blur plot}
 
 \item{whole.path}{logical. If \code{TRUE} (default = \code{FALSE}), the complete interpolated trajectories will be plotted in the background of the animation. If \code{whole.path = TRUE}, consider also setting \code{tail.length = 0}.}
 

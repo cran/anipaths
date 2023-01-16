@@ -7,14 +7,14 @@
 #' @param bg.opts Options passed to \code{plot()} function call that makes background in each frame. For example, this could be used to specify blue ocean and gray landcover if \code{background} is a \code{SpatialPolygonsDataFrame} and \code{bg.opts = list(bg = "dodgerblue4", col = "gray", border = "gray")}.
 #' @param blur.size a integer of the size for blur points; default is 8
 #' @param cliques A list of colors for network projections
-#' @param color_covariate_function a function to generate color for coraviate interpolation
+#' @param color_covariate_function a function to generate color for covariate interpolation
 #' @param coord A character vector of length 2 giving the names of the longitude/easting and latitude/northing columns in the \code{paths} \code{data.frame} (in that order). This is required if \code{paths} is not a \code{SpatialPointsDataFrame}.
 #' @param covariate The name of the column in \code{paths} that identifies the covariate to be mapped to a ring of color around each point.
 #' @param covariate.factors factor levels for covariate interpolation
 #' @param covariate.interp interpolation for covariate projections
 #' @param covariate.legend.loc either the location of the covariate legend, or \code{NA} if no legend is desired
 #' @param covariate.name name of covariate interpolation
-#' @param covariate.range the range of covaraite interpolation
+#' @param covariate.range the range of covariate interpolation
 #' @param covariate.thresh if changed from its default value of \code{NULL}, the interpolated value of the covariate will be binarized based on this numeric value.
 #' @param covariate.ticks 
 #' @param crawl.mu.color color for the main predictions for crawl interpolation; default is black
@@ -58,6 +58,7 @@
 #' @param time.grid A vector of time interval.
 #' @param Time.name The name of the columns in \code{paths} gving the observation times. This column must be of class \code{POSIXt}, or numeric.
 #' @param uncertainty.level value in (0, 1) corresponding to \code{level} at which to draw uncertainty ellipses. \code{NA} (default) results in no ellipses.
+#' @param uncertainty.type State what type of uncertainty plot 1 is default for tails more than 1 is amount of predicted trajectories for each unique individual and blurs for blur plot
 #' @param whole.path logical. If \code{TRUE} (default = \code{FALSE}), the complete interpolated trajectories will be plotted in the background of the animation. If \code{whole.path = TRUE}, consider also setting \code{tail.length = 0}.
 #' @param xlim Boundaries for plotting. If left undefined, the range of the data will be used.
 #' @param ylim Boundaries for plotting. If left undefined, the range of the data will be used.
@@ -69,7 +70,7 @@
 #' @import ggmap ggmap
 #' @importFrom scales alpha
 #' @importFrom grDevices rgb
-#' @importFrom animation saveHTML saveVideo
+#' @importFrom animation saveHTML saveVideo ani.options
 #' @importFrom dplyr filter
 #' @importFrom lubridate as_date
 #'
@@ -85,11 +86,12 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
                                  par.opts, paths, paths.interp, plot.date, pt.alpha, 
                                  pt.cex, pt.colors, pt.wd, res, scale, simulation, simulation.iter, 
                                  tail.alpha, tail.colors, tail.length, tail.wd, theme_map, 
-                                 time.grid, Time.name, uncertainty.level, whole.path, xlim, ylim, ...) {
-
+                                 time.grid, Time.name, uncertainty.level, uncertainty.type, 
+                                 whole.path, xlim, ylim, ...) {
+  
   # set option for animation frame and start time
   ani.options(interval = interval, ani.width = res * 480, ani.height = res * 480, verbose = F)
-
+  
   ## expression for animation for gam model
   if (interpolation_type == "gam" & method == "html") {
     saveHTML(expr = {
@@ -105,7 +107,7 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
         ## set par options ----
         do.call(par, par.opts)
         ## add background ----
-        if (class(bg[[frame]])[1] == "ggmap") {
+        if (inherits(bg[[frame]], "ggmap")) {
           par(mar = c(0.1, 0.1, 0.1, 0.1))
           if (bg.axes) {
             par(mar = c(4.1, 4.1, 0.1, 0.1))
@@ -122,13 +124,23 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
           if (bg.axes) {
             par(mar = c(4.1, 4.1, 0.1, 0.1))
           }
-          do.call(plot, c(
-            list(
-              "x" = bg[[frame]], xlab = "", ylab = "",
-              "xlim" = xlim, "ylim" = ylim, "main" = main
-            ),
-            bg.opts
-          ))
+          if(inherits(bg[[frame]], "SpatialPolygonsDataFrame")){
+            do.call(sp::plot, c(
+              list(
+                "x" = bg[[frame]], xlab = "", ylab = "",
+                "xlim" = xlim, "ylim" = ylim, "main" = main
+              ),
+              bg.opts
+            ))
+          } else {
+            do.call(plot, c(
+              list(
+                "x" = bg[[frame]], xlab = "", ylab = "",
+                "xlim" = xlim, "ylim" = ylim, "main" = main
+              ),
+              bg.opts
+            ))
+          }
           if (bg.axes) {
             mtext(text = coord[1], side = 1, line = 2.6)
             mtext(text = coord[2], side = 2, line = 2.6)
@@ -140,19 +152,42 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
         ## whole path ----
         if (isTRUE(whole.path)) {
           for (id in 1:length(paths)) {
-            lines(x = paths.interp[[id]][, c("mu.x", "mu.y")])
+            lines(x = paths.interp[[id]][ , , c("mu.x", "mu.y")], 
+                  col = id)
           }
         }
-        ## add tails ----
-        for (id in c(dimmed, (1:length(paths))[!(1:length(paths)) %in% dimmed])) {
-          if (frame > 1 & tail.length > 0) {
-            segments(
-              x0 = paths.interp[[id]][max(1, frame - tail.length - 1):(frame - 1), "mu.x"],
-              x1 = paths.interp[[id]][max(2, frame - tail.length):frame, "mu.x"],
-              y0 = paths.interp[[id]][max(1, frame - tail.length - 1):(frame - 1), "mu.y"],
-              y1 = paths.interp[[id]][max(2, frame - tail.length):frame, "mu.y"],
-              col = tail.colors[(id - 1) %% length(tail.colors) + 1], lwd = 6 * tail.wd * res
-            )
+        ## add blur ellipse ----
+        if(uncertainty.type == "blur"){
+          for(id in 1:length(paths)){
+            points(paths.interp[[id]][frame, ,"mu.x"], paths.interp[[id]][frame, ,"mu.y"])
+            points(blur_point(x=matrix(c(1.96*paths.interp[[id]][frame, ,"se.mu.x"],0,0,
+                                         1.96*paths.interp[[id]][frame, ,"se.mu.y"]), 2,2),
+                              center = c(paths.interp[[id]][frame, ,"mu.x"], paths.interp[[id]][frame, ,"mu.y"]),
+                              col = tail.colors, alpha_mult = new_alpha(paths.interp[[id]][frame, ,"se.mu.x"],paths.interp[[id]][frame, ,"se.mu.y"])))
+          }
+        } else if(uncertainty.type > 1){
+          ## multiple trajectories ----
+          multi_col <- tail.colors
+          for(id in 1:length(paths)){
+            if("unique" %in% tail.colors){
+              multi_col <- id
+            }
+            suppressWarnings(matlines(paths.interp[[id]][max(1, frame - tail.length):frame, ,"mu.x"],
+                                      paths.interp[[id]][max(1, frame - tail.length):frame, ,"mu.y"], 
+                                      col = multi_col, lty = 1, lwd = 6 * tail.wd * res))
+          }
+        } else{
+          ## add tails ----
+          for (id in c(dimmed, (1:length(paths))[!(1:length(paths)) %in% dimmed])) {
+            if (frame > 1 & tail.length > 0) {
+              segments(
+                x0 = paths.interp[[id]][max(1, frame - tail.length - 1):(frame - 1), ,"mu.x"],
+                x1 = paths.interp[[id]][max(2, frame - tail.length):frame, ,"mu.x"],
+                y0 = paths.interp[[id]][max(1, frame - tail.length - 1):(frame - 1), ,"mu.y"],
+                y1 = paths.interp[[id]][max(2, frame - tail.length):frame, ,"mu.y"],
+                col = tail.colors[(id - 1) %% length(tail.colors) + 1], lwd = 6 * tail.wd * res
+              )
+            }
           }
         }
         ## clique-wise network segments ----
@@ -162,10 +197,10 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
               for (id in as.numeric(cliques$cliques[[frame]][[cl]])) {
                 for (id2 in as.numeric(cliques$cliques[[frame]][[cl]])[-id]) {
                   segments(
-                    x0 = paths.interp[[id]][frame, "mu.x"],
-                    y0 = paths.interp[[id]][frame, "mu.y"],
-                    x1 = paths.interp[[id2]][frame, "mu.x"],
-                    y1 = paths.interp[[id2]][frame, "mu.y"],
+                    x0 = paths.interp[[id]][frame, , "mu.x"],
+                    y0 = paths.interp[[id]][frame, , "mu.y"],
+                    x1 = paths.interp[[id2]][frame, , "mu.x"],
+                    y1 = paths.interp[[id2]][frame, , "mu.y"],
                     col = alpha(cliques$colors[[frame]][cl], network.segment.trans),
                     lwd = network.segment.wt * res
                   )
@@ -191,7 +226,7 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
                 } else {
                   covariate.normalized.value <-
                     which(covariate.interp[[id]][frame] == levels(unlist(covariate.interp))) /
-                      nlevels(unlist(covariate.interp))
+                    nlevels(unlist(covariate.interp))
                 }
                 covariate.ring <-
                   rgb(color_covariate_function(covariate.normalized.value), maxColorValue = 255)
@@ -200,26 +235,26 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
             }
           }
           if (is.na(pt.colors[1])) {
-            points(matrix(paths.interp[[id]][frame, c("mu.x", "mu.y")], ncol = 2),
-              col = covariate.ring, pch = 19, cex = pt.cex * res * 0.85
+            points(matrix(paths.interp[[id]][frame, , c("mu.x", "mu.y")], ncol = 2),
+                   col = covariate.ring, pch = 19, cex = pt.cex * res * 0.85
             )
-            if (!is.na(paths.interp[[id]][frame, "se.mu.x"]) & !is.na(uncertainty.level)) {
+            if (all(!is.na(paths.interp[[id]][frame, , "se.mu.x"])) & !is.na(uncertainty.level)) {
               lines(ellipse(
-                x = diag(paths.interp[[id]][frame, c("se.mu.x", "se.mu.y")]^2),
-                centre = paths.interp[[id]][frame, c("mu.x", "mu.y")], level = uncertainty.level
+                x = diag(paths.interp[[id]][frame, , c("se.mu.x", "se.mu.y")]^2),
+                centre = paths.interp[[id]][frame, , c("mu.x", "mu.y")], level = uncertainty.level
               ),
               lty = 3
               )
             }
           } else {
-            points(matrix(paths.interp[[id]][frame, c("mu.x", "mu.y")], ncol = 2),
-              col = covariate.ring, bg = pt.colors[id, 1 + id %in% dimmed],
-              pch = 21, lwd = lwd * res, cex = pt.cex * res * 0.85
+            points(matrix(paths.interp[[id]][frame, , c("mu.x", "mu.y")], ncol = 2),
+                   col = covariate.ring, bg = pt.colors[id, 1 + id %in% dimmed],
+                   pch = 21, lwd = lwd * res, cex = pt.cex * res * 0.85
             )
-            if (!is.na(paths.interp[[id]][frame, "se.mu.x"]) & !is.na(uncertainty.level)) {
+            if (all(!is.na(paths.interp[[id]][frame, , "se.mu.x"])) & !is.na(uncertainty.level)) {
               lines(ellipse(
-                x = diag(paths.interp[[id]][frame, c("se.mu.x", "se.mu.y")]^2),
-                centre = paths.interp[[id]][frame, c("mu.x", "mu.y")], level = uncertainty.level
+                x = diag(paths.interp[[id]][frame, , c("se.mu.x", "se.mu.y")]^2),
+                centre = paths.interp[[id]][frame, , c("mu.x", "mu.y")], level = uncertainty.level
               ),
               lty = 3
               )
@@ -231,9 +266,9 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
             for (cl in 1:length(cliques$cliques[[frame]])) {
               for (id in as.numeric(cliques$cliques[[frame]][[cl]])) {
                 for (id2 in (1:length(paths))[-id]) {
-                  points(matrix(paths.interp[[id]][frame, c("mu.x", "mu.y")], ncol = 2),
-                    col = alpha(colour = cliques$colors[[frame]][cl], network.ring.trans),
-                    cex = radius[id], lwd = network.ring.wt * res
+                  points(matrix(paths.interp[[id]][frame, , c("mu.x", "mu.y")], ncol = 2),
+                         col = alpha(colour = cliques$colors[[frame]][cl], network.ring.trans),
+                         cex = radius[id], lwd = network.ring.wt * res
                   )
                 }
                 radius[id] <- radius[id] + pt.cex * res * 0.85 * (network.interp[id, id2, frame] > network.thresh)
@@ -246,16 +281,16 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
           legend.pt.colors <- pt.colors[, 1]
           legend.pt.colors[(1:nrow(pt.colors)) %in% dimmed] <- pt.colors[(1:nrow(pt.colors)) %in% dimmed, 2]
           legend(legend.loc,
-            pch = 19, pt.cex = 0.8 * res, col = legend.pt.colors, legend = ID_names,
-            box.lwd = 0, bty = "n", text.col = "gray60", cex = res
+                 pch = 19, pt.cex = 0.8 * res, col = legend.pt.colors, legend = ID_names,
+                 box.lwd = 0, bty = "n", text.col = "gray60", cex = res
           )
         } else {
           if (!is.na(cliques$cliques[[frame]][1])) {
             legend(legend.loc,
-              pch = 1, lwd = 3 * res, lty = NA, pt.cex = 0.8 * res, cex = res,
-              col = cliques$colors[[frame]],
-              legend = gsub(")", "", gsub("c(", "", lapply(cliques$cliques[[frame]], as.numeric), fixed = T)),
-              box.lwd = 0
+                   pch = 1, lwd = 3 * res, lty = NA, pt.cex = 0.8 * res, cex = res,
+                   col = cliques$colors[[frame]],
+                   legend = gsub(")", "", gsub("c(", "", lapply(cliques$cliques[[frame]], as.numeric), fixed = T)),
+                   box.lwd = 0
             )
           }
         }
@@ -264,26 +299,26 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
             if (!is.null(covariate.factors[1])) {
               color_ticks <- seq(0, 1, l = length(covariate.factors))
               legend(covariate.legend.loc,
-                pch = 21 - 2 * is.na(pt.colors[1]), lwd = 2.5 / 1.5 * res,
-                col = rgb(color_covariate_function(color_ticks), maxColorValue = 255),
-                legend = covariate.factors, cex = res,
-                box.lwd = 0, bty = "n", text.col = "gray60", lty = NA, title = covariate.name
+                     pch = 21 - 2 * is.na(pt.colors[1]), lwd = 2.5 / 1.5 * res,
+                     col = rgb(color_covariate_function(color_ticks), maxColorValue = 255),
+                     legend = covariate.factors, cex = res,
+                     box.lwd = 0, bty = "n", text.col = "gray60", lty = NA, title = covariate.name
               )
             } else {
               color_ticks <- (covariate.ticks - covariate.range[1]) / diff(covariate.range)
               legend(covariate.legend.loc,
-                pch = 21 - 2 * is.na(pt.colors[1]), pt.cex = pt.cex * res * 0.85, lwd = 2.5 / 1.5 * res,
-                col = rgb(color_covariate_function(color_ticks), maxColorValue = 255),
-                legend = covariate.ticks, cex = res,
-                box.lwd = 0, bty = "n", text.col = "gray60", lty = NA, title = covariate.name
+                     pch = 21 - 2 * is.na(pt.colors[1]), pt.cex = pt.cex * res * 0.85, lwd = 2.5 / 1.5 * res,
+                     col = rgb(color_covariate_function(color_ticks), maxColorValue = 255),
+                     legend = covariate.ticks, cex = res,
+                     box.lwd = 0, bty = "n", text.col = "gray60", lty = NA, title = covariate.name
               )
             }
           } else {
             legend(covariate.legend.loc,
-              pch = 21 - 2 * is.na(pt.colors[1]), pt.cex = pt.cex * res * 0.85, lwd = 2.5 / 1.5 * res,
-              col = rgb(color_covariate_function(0:1), maxColorValue = 255),
-              legend = paste(c("<", ">="), covariate.thresh), cex = res,
-              box.lwd = 0, bty = "n", text.col = "gray60", lty = NA, title = covariate.name
+                   pch = 21 - 2 * is.na(pt.colors[1]), pt.cex = pt.cex * res * 0.85, lwd = 2.5 / 1.5 * res,
+                   col = rgb(color_covariate_function(0:1), maxColorValue = 255),
+                   legend = paste(c("<", ">="), covariate.thresh), cex = res,
+                   box.lwd = 0, bty = "n", text.col = "gray60", lty = NA, title = covariate.name
             )
           }
         }
@@ -299,8 +334,8 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
         ## timing ----
         if (n.frames >= 10 & frame %% floor(n.frames / 10) == 0) {
           message(paste("frame ", frame, " out of ", n.frames, " (", round(frame / n.frames, 3) * 100, "%)",
-            " [", round(as.numeric(Sys.time() - cur.time), 2), " seconds]",
-            sep = ""
+                        " [", round(as.numeric(Sys.time() - cur.time), 2), " seconds]",
+                        sep = ""
           ))
           cur.time <- Sys.time()
         }
@@ -354,19 +389,41 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
         ## whole path ----
         if (isTRUE(whole.path)) {
           for (id in 1:length(paths)) {
-            lines(x = paths.interp[[id]][, c("mu.x", "mu.y")])
+            lines(x = paths.interp[[id]][ , , c("mu.x", "mu.y")])
           }
         }
-        ## add tails ----
-        for (id in c(dimmed, (1:length(paths))[!(1:length(paths)) %in% dimmed])) {
-          if (frame > 1 & tail.length > 0) {
-            segments(
-              x0 = paths.interp[[id]][max(1, frame - tail.length - 1):(frame - 1), "mu.x"],
-              x1 = paths.interp[[id]][max(2, frame - tail.length):frame, "mu.x"],
-              y0 = paths.interp[[id]][max(1, frame - tail.length - 1):(frame - 1), "mu.y"],
-              y1 = paths.interp[[id]][max(2, frame - tail.length):frame, "mu.y"],
-              col = tail.colors[(id - 1) %% length(tail.colors) + 1], lwd = 6 * tail.wd * res
-            )
+        if(uncertainty.type == "blur"){
+          ## add blur ellipse ----
+          if(!all(sapply(bg, is.null))){
+            warning("Blur with backgrounds not ready yet but can use backgrounds with multiple trajectories")
+            break
+          }
+          for(id in 1:length(paths)){
+            points(paths.interp[[id]][frame, ,"mu.x"], paths.interp[[id]][frame, ,"mu.y"])
+            points(blur_point(x=matrix(c(1.96*paths.interp[[id]][frame, ,"se.mu.x"],0,0,
+                                         1.96*paths.interp[[id]][frame, ,"se.mu.y"]), 2,2),
+                              center = c(paths.interp[[id]][frame, ,"mu.x"], paths.interp[[id]][frame, ,"mu.y"]),
+                              col = tail.colors, alpha_mult = new_alpha(paths.interp[[id]][frame, ,"se.mu.x"],paths.interp[[id]][frame, ,"se.mu.y"])))
+          }
+        } else if(uncertainty.type > 1){
+          ## multiple trajectories ----
+          for(id in 1:length(paths)){
+            suppressWarnings(matlines(paths.interp[[id]][max(1, frame - tail.length):frame, ,"mu.x"],
+                                      paths.interp[[id]][max(1, frame - tail.length):frame, ,"mu.y"], 
+                                      col = tail.colors, lty = 1, lwd = 6 * tail.wd * res))
+          }
+        } else{
+          ## add tails ----
+          for (id in c(dimmed, (1:length(paths))[!(1:length(paths)) %in% dimmed])) {
+            if (frame > 1 & tail.length > 0) {
+              segments(
+                x0 = paths.interp[[id]][max(1, frame - tail.length - 1):(frame - 1), ,"mu.x"],
+                x1 = paths.interp[[id]][max(2, frame - tail.length):frame, ,"mu.x"],
+                y0 = paths.interp[[id]][max(1, frame - tail.length - 1):(frame - 1), ,"mu.y"],
+                y1 = paths.interp[[id]][max(2, frame - tail.length):frame, ,"mu.y"],
+                col = tail.colors[(id - 1) %% length(tail.colors) + 1], lwd = 6 * tail.wd * res
+              )
+            }
           }
         }
         ## clique-wise network segments ----
@@ -376,10 +433,10 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
               for (id in as.numeric(cliques$cliques[[frame]][[cl]])) {
                 for (id2 in as.numeric(cliques$cliques[[frame]][[cl]])[-id]) {
                   segments(
-                    x0 = paths.interp[[id]][frame, 1],
-                    y0 = paths.interp[[id]][frame, 2],
-                    x1 = paths.interp[[id2]][frame, 1],
-                    y1 = paths.interp[[id2]][frame, 2],
+                    x0 = paths.interp[[id]][frame, , "mu.x"],
+                    y0 = paths.interp[[id]][frame, , "mu.y"],
+                    x1 = paths.interp[[id2]][frame, , "mu.x"],
+                    y1 = paths.interp[[id2]][frame, , "mu.y"],
                     col = alpha(cliques$colors[[frame]][cl], network.segment.trans),
                     lwd = network.segment.wt * res
                   )
@@ -405,7 +462,7 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
                 } else {
                   covariate.normalized.value <-
                     which(covariate.interp[[id]][frame] == levels(unlist(covariate.interp))) /
-                      nlevels(unlist(covariate.interp))
+                    nlevels(unlist(covariate.interp))
                 }
                 covariate.ring <-
                   rgb(color_covariate_function(covariate.normalized.value), maxColorValue = 255)
@@ -414,26 +471,26 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
             }
           }
           if (is.na(pt.colors[1])) {
-            points(matrix(paths.interp[[id]][frame, c("mu.x", "mu.y")], ncol = 2),
-              col = covariate.ring, pch = 19, cex = pt.cex * res * 0.85
+            points(matrix(paths.interp[[id]][frame, , c("mu.x", "mu.y")], ncol = 2),
+                   col = covariate.ring, pch = 19, cex = pt.cex * res * 0.85
             )
-            if (!is.na(paths.interp[[id]][frame, 3]) & !is.na(uncertainty.level)) {
+            if (all(!is.na(paths.interp[[id]][frame, , "se.mu.x"])) & !is.na(uncertainty.level)) {
               lines(ellipse(
-                x = diag(paths.interp[[id]][frame, c("se.mu.x", "se.mu.y")]^2),
-                centre = paths.interp[[id]][frame, c("mu.x", "mu.y")], level = uncertainty.level
+                x = diag(paths.interp[[id]][frame, , c("se.mu.x", "se.mu.y")]^2),
+                centre = paths.interp[[id]][frame, , c("mu.x", "mu.y")], level = uncertainty.level
               ),
               lty = 3
               )
             }
           } else {
-            points(matrix(paths.interp[[id]][frame, c("mu.x", "mu.y")], ncol = 2),
-              col = covariate.ring, bg = pt.colors[id, 1 + id %in% dimmed],
-              pch = 21, lwd = lwd * res, cex = pt.cex * res * 0.85
+            points(matrix(paths.interp[[id]][frame, , c("mu.x", "mu.y")], ncol = 2),
+                   col = covariate.ring, bg = pt.colors[id, 1 + id %in% dimmed],
+                   pch = 21, lwd = lwd * res, cex = pt.cex * res * 0.85
             )
-            if (!is.na(paths.interp[[id]][frame, 3]) & !is.na(uncertainty.level)) {
+            if (all(!is.na(paths.interp[[id]][frame, , "se.mu.x"])) & !is.na(uncertainty.level)) {
               lines(ellipse(
-                x = diag(paths.interp[[id]][frame, c("se.mu.x", "se.mu.y")]^2),
-                centre = paths.interp[[id]][frame, c("mu.x", "mu.y")], level = uncertainty.level
+                x = diag(paths.interp[[id]][frame, , c("se.mu.x", "se.mu.y")]^2),
+                centre = paths.interp[[id]][frame, , c("mu.x", "mu.y")], level = uncertainty.level
               ),
               lty = 3
               )
@@ -445,9 +502,9 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
             for (cl in 1:length(cliques$cliques[[frame]])) {
               for (id in as.numeric(cliques$cliques[[frame]][[cl]])) {
                 for (id2 in (1:length(paths))[-id]) {
-                  points(matrix(paths.interp[[id]][frame, c("mu.x", "mu.y")], ncol = 2),
-                    col = alpha(colour = cliques$colors[[frame]][cl], network.ring.trans),
-                    cex = radius[id], lwd = network.ring.wt * res
+                  points(matrix(paths.interp[[id]][frame, , c("mu.x", "mu.y")], ncol = 2),
+                         col = alpha(colour = cliques$colors[[frame]][cl], network.ring.trans),
+                         cex = radius[id], lwd = network.ring.wt * res
                   )
                 }
                 radius[id] <- radius[id] + pt.cex * res * 0.85 * (network.interp[id, id2, frame] > network.thresh)
@@ -460,16 +517,16 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
           legend.pt.colors <- pt.colors[, 1]
           legend.pt.colors[(1:nrow(pt.colors)) %in% dimmed] <- pt.colors[(1:nrow(pt.colors)) %in% dimmed, 2]
           legend(legend.loc,
-            pch = 19, pt.cex = 0.8 * res, col = legend.pt.colors, legend = ID_names,
-            box.lwd = 0, bty = "n", text.col = "gray60", cex = res
+                 pch = 19, pt.cex = 0.8 * res, col = legend.pt.colors, legend = ID_names,
+                 box.lwd = 0, bty = "n", text.col = "gray60", cex = res
           )
         } else {
           if (!is.na(cliques$cliques[[frame]][1])) {
             legend(legend.loc,
-              pch = 1, lwd = 3 * res, lty = NA, pt.cex = 0.8 * res, cex = res,
-              col = cliques$colors[[frame]],
-              legend = gsub(")", "", gsub("c(", "", lapply(cliques$cliques[[frame]], as.numeric), fixed = T)),
-              box.lwd = 0
+                   pch = 1, lwd = 3 * res, lty = NA, pt.cex = 0.8 * res, cex = res,
+                   col = cliques$colors[[frame]],
+                   legend = gsub(")", "", gsub("c(", "", lapply(cliques$cliques[[frame]], as.numeric), fixed = T)),
+                   box.lwd = 0
             )
           }
         }
@@ -478,26 +535,26 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
             if (!is.null(covariate.factors[1])) {
               color_ticks <- seq(0, 1, l = length(covariate.factors))
               legend(covariate.legend.loc,
-                pch = 21 - 2 * is.na(pt.colors[1]), lwd = 2.5 / 1.5 * res,
-                col = rgb(color_covariate_function(color_ticks), maxColorValue = 255),
-                legend = covariate.factors, cex = res,
-                box.lwd = 0, bty = "n", text.col = "gray60", lty = NA, title = covariate.name
+                     pch = 21 - 2 * is.na(pt.colors[1]), lwd = 2.5 / 1.5 * res,
+                     col = rgb(color_covariate_function(color_ticks), maxColorValue = 255),
+                     legend = covariate.factors, cex = res,
+                     box.lwd = 0, bty = "n", text.col = "gray60", lty = NA, title = covariate.name
               )
             } else {
               color_ticks <- (covariate.ticks - covariate.range[1]) / diff(covariate.range)
               legend(covariate.legend.loc,
-                pch = 21 - 2 * is.na(pt.colors[1]), pt.cex = pt.cex * res * 0.85, lwd = 2.5 / 1.5 * res,
-                col = rgb(color_covariate_function(color_ticks), maxColorValue = 255),
-                legend = covariate.ticks, cex = res,
-                box.lwd = 0, bty = "n", text.col = "gray60", lty = NA, title = covariate.name
+                     pch = 21 - 2 * is.na(pt.colors[1]), pt.cex = pt.cex * res * 0.85, lwd = 2.5 / 1.5 * res,
+                     col = rgb(color_covariate_function(color_ticks), maxColorValue = 255),
+                     legend = covariate.ticks, cex = res,
+                     box.lwd = 0, bty = "n", text.col = "gray60", lty = NA, title = covariate.name
               )
             }
           } else {
             legend(covariate.legend.loc,
-              pch = 21 - 2 * is.na(pt.colors[1]), pt.cex = pt.cex * res * 0.85, lwd = 2.5 / 1.5 * res,
-              col = rgb(color_covariate_function(0:1), maxColorValue = 255),
-              legend = paste(c("<", ">="), covariate.thresh), cex = res,
-              box.lwd = 0, bty = "n", text.col = "gray60", lty = NA, title = covariate.name
+                   pch = 21 - 2 * is.na(pt.colors[1]), pt.cex = pt.cex * res * 0.85, lwd = 2.5 / 1.5 * res,
+                   col = rgb(color_covariate_function(0:1), maxColorValue = 255),
+                   legend = paste(c("<", ">="), covariate.thresh), cex = res,
+                   box.lwd = 0, bty = "n", text.col = "gray60", lty = NA, title = covariate.name
             )
           }
         }
@@ -513,8 +570,8 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
         ## timing ----
         if (n.frames >= 10 & frame %% floor(n.frames / 10) == 0) {
           message(paste("frame ", frame, " out of ", n.frames, " (", round(frame / n.frames, 3) * 100, "%)",
-            " [", round(as.numeric(Sys.time() - cur.time), 2), " seconds]",
-            sep = ""
+                        " [", round(as.numeric(Sys.time() - cur.time), 2), " seconds]",
+                        sep = ""
           ))
           cur.time <- Sys.time()
         }
@@ -556,7 +613,7 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
         for (current_time in seq_along(time.grid)) {
           # find current time
           time_point <- time.grid[[current_time]]
-
+          
           # initiate print list for data and index
           df_list <- list()
           df_today_list <- list()
@@ -607,7 +664,7 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
           }
           
           # plot
-          if (crawl.plot.type == "point.tail") {
+          if (uncertainty.type == 1) {
             if (nrow(df) > 1 & length(unique(df$ID)) > 1) {
               p <- p +
                 geom_path(
@@ -638,20 +695,20 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
                 data = df_today,
                 aes(x = mu.x, y = mu.y, colour = ID), alpha = pt.alpha, size = 3
               )
-          } else if (crawl.plot.type == "point") {
+          } else if (uncertainty.type == 1 & tail.length == 0) {
             p <- p +
               geom_point(
                 data = df_today %>% filter(key == "mu"),
                 aes(x = mu.x, y = mu.y, colour = ID),
                 alpha = pt.alpha, size = pt.wd
               )
-          } else if (crawl.plot.type == "blur") {
+          } else if (uncertainty.type == "blur" & tail.length == 0) {
             p <- p + 
               geom_blurry(
                 data = df_today, aes(x = mu.x, y = mu.y, colour = ID, size = se.mu.y), alpha = pt.alpha
               ) +
               scale_size(guide = NULL)
-          } else if (crawl.plot.type == "blur.tail"){
+          } else if (uncertainty.type == "blur" & tail.length > 0){
             if (nrow(df) > 1 & length(unique(df$ID)) > 1) {
               p <- p +
                 geom_path(
@@ -758,7 +815,7 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
           }
           
           # plot
-          if (crawl.plot.type == "point.tail") {
+          if (uncertainty.type == 1) {
             if (nrow(df) > 1 & length(unique(df$ID)) > 1) {
               p <- p +
                 geom_path(
@@ -789,20 +846,20 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
                 data = df_today,
                 aes(x = mu.x, y = mu.y, colour = ID), alpha = pt.alpha, size = 3
               )
-          } else if (crawl.plot.type == "point") {
+          } else if (uncertainty.type == 1 & tail.length == 0) {
             p <- p +
               geom_point(
                 data = df_today %>% filter(key == "mu"),
                 aes(x = mu.x, y = mu.y, colour = ID),
                 alpha = pt.alpha, size = pt.wd
               )
-          } else if (crawl.plot.type == "blur") {
+          } else if (uncertainty.type == "blur" & tail.length == 0) {
             p <- p + 
               geom_blurry(
                 data = df_today, aes(x = mu.x, y = mu.y, colour = ID, size = se.mu.y), alpha = pt.alpha
               ) +
               scale_size(guide = NULL)
-          } else if (crawl.plot.type == "blur.tail"){
+          } else if (uncertainty.type == "blur" & tail.length >0){
             if (nrow(df) > 1 & length(unique(df$ID)) > 1) {
               p <- p +
                 geom_path(
@@ -839,7 +896,7 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
             theme(legend.title = element_blank())
           
           print(p)
-        
+          
           ## timing ----
           frame <- current_time
           if (n.frames >= 10 & frame %% floor(n.frames / 10) == 0) {

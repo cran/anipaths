@@ -1,11 +1,24 @@
-anipaths v0.10.0 (Release date: 2020-05-14)
+anipaths v0.10.2 (Release date: 2023-1-6)
+==============
+
+Changes: 
+
+* Better interpolation behavior for small numbers of observations
+
+* New options for visualizing uncertainty (multiple trajectories) for GAM-based interpolation
+
+* Better handling of the creation of multiple animations (avoid overwritting, allows for multiple animations in the same .html file)
+
+* Improved automatical selection of knots for GAM-based interpolation
+
+anipaths v0.10.1 (Release date: 2021-05-15)
 ==============
 
 Changes: 
 
 * Address NOTE in example for animate_paths() for CRAN
 
-anipaths v0.10.0 (Release date: 2020-05-14)
+anipaths v0.10.0 (Release date: 2021-05-14)
 ==============
 
 Changes:
