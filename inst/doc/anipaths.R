@@ -34,16 +34,15 @@ knitr::opts_chunk$set(eval = F)
 #                background = background, img.name = "background_google")
 
 ## ----map_simple---------------------------------------------------------------
-#  background <- rworldmap::getMap(resolution = "coarse")
-#  sp::proj4string(background) ## matches default projection in animate_paths()
-#  # background <- data.frame(x = range(vultures_paths$location.long)[c(1, 2, 2, 1, 1)],
-#  #                          y = range(vultures_paths$location.lat)[c(1, 1, 2, 2, 1)])
+#  background <- geodata::world(path = ".")
+#  sf::st_crs(background)$proj4string ## matches default projection in animate_paths()
 #  animate_paths(paths = vultures_paths,
 #                delta.t = "week",
 #                coord = c("location.long", "location.lat"),
 #                Time.name = "POSIX",
 #                ID.name = "individual.local.identifier",
 #                background = background, img.name = "background_user")
+#  system("rm -r gadm") ## remove geodata map from machine
 
 ## ----make_covariates----------------------------------------------------------
 #  behaviors <- c("exploratory", "directed", "stationary")
@@ -57,8 +56,8 @@ knitr::opts_chunk$set(eval = F)
 
 ## ----plot_covariates----------------------------------------------------------
 #  delta.t <- "day"
-#  background <- rworldmap::getMap(resolution = "coarse")
-#  sp::proj4string(background)
+#  background <- geodata::world(path = ".")
+#  sf::st_crs(background)$proj4string ## matches default projection in animate_paths()
 #  animate_paths(paths = vultures_paths,
 #                delta.t = delta.t,
 #                coord = c("location.long", "location.lat"),
@@ -66,6 +65,7 @@ knitr::opts_chunk$set(eval = F)
 #                covariate = "behavior", covariate.colors = viridis::viridis(3),
 #                ID.name = "individual.local.identifier",
 #                background = background, img.name = "covariates")
+#  system("rm -r gadm") ## remove geodata map from machine
 
 ## -----------------------------------------------------------------------------
 #  interp <- animate_paths(paths = vultures_paths,

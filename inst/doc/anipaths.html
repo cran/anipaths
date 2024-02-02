@@ -12,7 +12,7 @@
 
 <meta name="author" content="Henry Scharf" />
 
-<meta name="date" content="2023-01-08" />
+<meta name="date" content="2024-02-01" />
 
 <title>anipaths: spline-based interpolation</title>
 
@@ -121,13 +121,20 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
   for (var i = 0; i < sheets.length; i++) {
     if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
     try { var rules = sheets[i].cssRules; } catch (e) { continue; }
-    for (var j = 0; j < rules.length; j++) {
+    var j = 0;
+    while (j < rules.length) {
       var rule = rules[j];
       // check if there is a div.sourceCode rule
-      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
       var style = rule.style.cssText;
       // check if color or background-color is set
-      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
       // replace div.sourceCode by a pre.sourceCode rule
       sheets[i].deleteRule(j);
       sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
@@ -333,7 +340,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">anipaths: spline-based interpolation</h1>
 <h4 class="author">Henry Scharf</h4>
-<h4 class="date">2023-01-08</h4>
+<h4 class="date">2024-02-01</h4>
 
 
 <div id="TOC">
@@ -375,14 +382,14 @@ variable of class <code>numeric</code> or <code>POSIX</code>. One
 advantage to using the <code>POSIX</code> class is that we can specify
 the gaps in the interpolation (<code>delta.t</code>) using convenient
 character strings like <code>&quot;hour&quot;</code> or <code>&quot;week&quot;</code>.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(anipaths)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>vultures<span class="sc">$</span>POSIX <span class="ot">&lt;-</span> <span class="fu">as.POSIXct</span>(vultures<span class="sc">$</span>timestamp, <span class="at">tz =</span> <span class="st">&quot;UTC&quot;</span>)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>vultures_paths <span class="ot">&lt;-</span> vultures[<span class="fu">format</span>(vultures<span class="sc">$</span>POSIX, <span class="st">&quot;%Y&quot;</span>) <span class="sc">==</span> <span class="dv">2009</span>, ] <span class="do">## limit attention to 2009</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">delta.t =</span> <span class="st">&quot;day&quot;</span>,</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(anipaths)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>vultures<span class="sc">$</span>POSIX <span class="ot">&lt;-</span> <span class="fu">as.POSIXct</span>(vultures<span class="sc">$</span>timestamp, <span class="at">tz =</span> <span class="st">&quot;UTC&quot;</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>vultures_paths <span class="ot">&lt;-</span> vultures[<span class="fu">format</span>(vultures<span class="sc">$</span>POSIX, <span class="st">&quot;%Y&quot;</span>) <span class="sc">==</span> <span class="dv">2009</span>, ] <span class="do">## limit attention to 2009</span></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>              <span class="at">delta.t =</span> <span class="st">&quot;day&quot;</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>)</span></code></pre></div>
 <div id="using-background-maps" class="section level3">
 <h3>Using background maps</h3>
 <p>Often it may be useful to add a map of the relevant study area. There
@@ -391,13 +398,13 @@ are lots of ways to incorporate a map. The simplest way is to set
 <code>anipaths</code> will do the best it can to select a map based on
 the data. In the next example, we’ve changed the time step to help the
 animations load a little faster.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggmap)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>              <span class="at">delta.t =</span> <span class="dv">2</span> <span class="sc">*</span> <span class="dv">24</span> <span class="sc">*</span> <span class="dv">60</span> <span class="sc">*</span> <span class="dv">60</span>, <span class="do">## number of seconds in two days</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">background =</span> <span class="cn">TRUE</span>, <span class="at">img.name =</span> <span class="st">&quot;background_TRUE&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">library</span>(ggmap)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>              <span class="at">delta.t =</span> <span class="dv">2</span> <span class="sc">*</span> <span class="dv">24</span> <span class="sc">*</span> <span class="dv">60</span> <span class="sc">*</span> <span class="dv">60</span>, <span class="do">## number of seconds in two days</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>              <span class="at">background =</span> <span class="cn">TRUE</span>, <span class="at">img.name =</span> <span class="st">&quot;background_TRUE&quot;</span>)</span></code></pre></div>
 <p>You can also give a long/lat <code>location</code>, <code>zoom</code>
 level (3-21; see <code>?ggmap::get_map()</code>), and
 <code>maptype</code> (<code>satellite</code>, <code>terrain</code>,
@@ -407,28 +414,27 @@ level (3-21; see <code>?ggmap::get_map()</code>), and
 a numeric, which will be interpreted in whatever units used by
 <code>as.numeric(paths[&#39;Time.name&#39;])</code> (in our case, this is
 seconds).</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>vultures_paths <span class="ot">&lt;-</span> vultures[<span class="fu">format</span>(vultures<span class="sc">$</span>POSIX, <span class="st">&quot;%Y&quot;</span>) <span class="sc">==</span> <span class="dv">2009</span><span class="sc">:</span><span class="dv">2010</span>, ]</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>background <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">center =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">90</span>, <span class="dv">10</span>), </span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>                   <span class="at">zoom =</span> <span class="dv">3</span>, </span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>                   <span class="at">maptype =</span> <span class="st">&quot;satellite&quot;</span>)</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">delta.t =</span> <span class="dv">3</span> <span class="sc">*</span> <span class="dv">24</span> <span class="sc">*</span> <span class="dv">60</span> <span class="sc">*</span> <span class="dv">60</span>, <span class="do">## number of seconds in three days</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>              <span class="at">background =</span> background, <span class="at">img.name =</span> <span class="st">&quot;background_google&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>vultures_paths <span class="ot">&lt;-</span> vultures[<span class="fu">format</span>(vultures<span class="sc">$</span>POSIX, <span class="st">&quot;%Y&quot;</span>) <span class="sc">==</span> <span class="dv">2009</span><span class="sc">:</span><span class="dv">2010</span>, ]</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>background <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">center =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">90</span>, <span class="dv">10</span>), </span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>                   <span class="at">zoom =</span> <span class="dv">3</span>, </span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>                   <span class="at">maptype =</span> <span class="st">&quot;satellite&quot;</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>              <span class="at">delta.t =</span> <span class="dv">3</span> <span class="sc">*</span> <span class="dv">24</span> <span class="sc">*</span> <span class="dv">60</span> <span class="sc">*</span> <span class="dv">60</span>, <span class="do">## number of seconds in three days</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>              <span class="at">background =</span> background, <span class="at">img.name =</span> <span class="st">&quot;background_google&quot;</span>)</span></code></pre></div>
 <p>You can also supply your own background image. The projection and
 units should match the data.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>background <span class="ot">&lt;-</span> rworldmap<span class="sc">::</span><span class="fu">getMap</span>(<span class="at">resolution =</span> <span class="st">&quot;coarse&quot;</span>)</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>sp<span class="sc">::</span><span class="fu">proj4string</span>(background) <span class="do">## matches default projection in animate_paths()</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co"># background &lt;- data.frame(x = range(vultures_paths$location.long)[c(1, 2, 2, 1, 1)],</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co">#                          y = range(vultures_paths$location.lat)[c(1, 1, 2, 2, 1)])</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">delta.t =</span> <span class="st">&quot;week&quot;</span>,</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>              <span class="at">background =</span> background, <span class="at">img.name =</span> <span class="st">&quot;background_user&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>background <span class="ot">&lt;-</span> geodata<span class="sc">::</span><span class="fu">world</span>(<span class="at">path =</span> <span class="st">&quot;.&quot;</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>sf<span class="sc">::</span><span class="fu">st_crs</span>(background)<span class="sc">$</span>proj4string <span class="do">## matches default projection in animate_paths()</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>              <span class="at">delta.t =</span> <span class="st">&quot;week&quot;</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>              <span class="at">background =</span> background, <span class="at">img.name =</span> <span class="st">&quot;background_user&quot;</span>)</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="fu">system</span>(<span class="st">&quot;rm -r gadm&quot;</span>) <span class="do">## remove geodata map from machine</span></span></code></pre></div>
 <p>The function <code>animate_paths()</code> must project the data to
 match Google’s map tiles, so if your data aren’t in long/lat format,
 make sure you update the <code>paths.proj</code> variable with the
@@ -443,14 +449,14 @@ covariates available for the vultures, so we’ll make one up for the
 purposed of demonstration. The following code assigns each individual a
 random interval for each of three behaviors: <em>exploratory</em>,
 <em>directed</em>, and <em>stationary</em>.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>behaviors <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;exploratory&quot;</span>, <span class="st">&quot;directed&quot;</span>, <span class="st">&quot;stationary&quot;</span>)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>vultures_paths<span class="sc">$</span>behavior <span class="ot">&lt;-</span> </span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unlist</span>(<span class="fu">sapply</span>(<span class="fu">unique</span>(vultures_paths<span class="sc">$</span>individual.local.identifier), <span class="cf">function</span>(id){</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    v_id <span class="ot">&lt;-</span> vultures_paths[vultures_paths<span class="sc">$</span>individual.local.identifier <span class="sc">==</span> id, ]</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    switches <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fu">sort</span>(<span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(v_id), <span class="dv">2</span>)), <span class="fu">nrow</span>(v_id))</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rep</span>(behaviors[<span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="dv">3</span>)], <span class="fu">diff</span>(switches))</span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  }))</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>behaviors <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;exploratory&quot;</span>, <span class="st">&quot;directed&quot;</span>, <span class="st">&quot;stationary&quot;</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>vultures_paths<span class="sc">$</span>behavior <span class="ot">&lt;-</span> </span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  <span class="fu">unlist</span>(<span class="fu">sapply</span>(<span class="fu">unique</span>(vultures_paths<span class="sc">$</span>individual.local.identifier), <span class="cf">function</span>(id){</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>    v_id <span class="ot">&lt;-</span> vultures_paths[vultures_paths<span class="sc">$</span>individual.local.identifier <span class="sc">==</span> id, ]</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>    switches <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fu">sort</span>(<span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(v_id), <span class="dv">2</span>)), <span class="fu">nrow</span>(v_id))</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>    <span class="fu">rep</span>(behaviors[<span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="dv">3</span>)], <span class="fu">diff</span>(switches))</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>  }))</span></code></pre></div>
 <p>The covariates have now been appended to the <code>paths</code> data
 frame. We can let <code>animate_paths()</code> know we would like it to
 display this information by setting the argument <code>covariate</code>
@@ -459,16 +465,17 @@ to match the name of the appropriate column in <code>paths</code> (i.e.,
 collection of colors can be provided (e.g.,
 <code>covariate.colors = viridis::viridis(3)</code>) which will be
 turned into a palette to match the support of the covariate.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>delta.t <span class="ot">&lt;-</span> <span class="st">&quot;day&quot;</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>background <span class="ot">&lt;-</span> rworldmap<span class="sc">::</span><span class="fu">getMap</span>(<span class="at">resolution =</span> <span class="st">&quot;coarse&quot;</span>)</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>sp<span class="sc">::</span><span class="fu">proj4string</span>(background)</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">delta.t =</span> delta.t,</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">covariate =</span> <span class="st">&quot;behavior&quot;</span>, <span class="at">covariate.colors =</span> viridis<span class="sc">::</span><span class="fu">viridis</span>(<span class="dv">3</span>),</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>,</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>              <span class="at">background =</span> background, <span class="at">img.name =</span> <span class="st">&quot;covariates&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>delta.t <span class="ot">&lt;-</span> <span class="st">&quot;day&quot;</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>background <span class="ot">&lt;-</span> geodata<span class="sc">::</span><span class="fu">world</span>(<span class="at">path =</span> <span class="st">&quot;.&quot;</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>sf<span class="sc">::</span><span class="fu">st_crs</span>(background)<span class="sc">$</span>proj4string <span class="do">## matches default projection in animate_paths()</span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>              <span class="at">delta.t =</span> delta.t,</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>              <span class="at">covariate =</span> <span class="st">&quot;behavior&quot;</span>, <span class="at">covariate.colors =</span> viridis<span class="sc">::</span><span class="fu">viridis</span>(<span class="dv">3</span>),</span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>,</span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a>              <span class="at">background =</span> background, <span class="at">img.name =</span> <span class="st">&quot;covariates&quot;</span>)</span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="fu">system</span>(<span class="st">&quot;rm -r gadm&quot;</span>) <span class="do">## remove geodata map from machine</span></span></code></pre></div>
 <p><em>Note</em>: if a covariate is represented numerically but should
 be treated as a factor, changing the class using
 <code>as.factor()</code> should prevent <code>animate_paths()</code>
@@ -499,14 +506,14 @@ the interpolation can be done by modifying the <code>s_args</code>
 argument.</p>
 <p>The following code demonstrates the use of <code>s_args</code> by
 intentionally over-smoothing the trajectories.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>interp <span class="ot">&lt;-</span> <span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>                        <span class="at">delta.t =</span> <span class="st">&quot;day&quot;</span>,</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>                        <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>                        <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>                        <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>,</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>                        <span class="at">s_args =</span> <span class="fu">rep</span>(<span class="fu">list</span>(<span class="fu">list</span>(<span class="at">k =</span> <span class="dv">10</span>)), <span class="dv">10</span>),</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>                        <span class="at">return.paths =</span> T)</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(interp, <span class="at">i =</span> <span class="dv">2</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>interp <span class="ot">&lt;-</span> <span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>                        <span class="at">delta.t =</span> <span class="st">&quot;day&quot;</span>,</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>                        <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>                        <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>                        <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>                        <span class="at">s_args =</span> <span class="fu">rep</span>(<span class="fu">list</span>(<span class="fu">list</span>(<span class="at">k =</span> <span class="dv">10</span>)), <span class="dv">10</span>),</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>                        <span class="at">return.paths =</span> T)</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="fu">plot</span>(interp, <span class="at">i =</span> <span class="dv">2</span>)</span></code></pre></div>
 <p>This piece of code shows the number of observations for each
 individual vulture, in the same order they are handled by
 <code>animate_paths()</code> (i.e., the same order as
@@ -517,28 +524,28 @@ case, the number of observations divided by 4 is used as the number of
 knots for each individual, with a maximum of 306 knots because each
 frame in the animation corresponds to a single day between March 1 and
 December 31.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>obs_counts <span class="ot">&lt;-</span> <span class="fu">merge</span>(<span class="fu">data.frame</span>(<span class="at">individual.local.identifier =</span> <span class="fu">unique</span>(vultures_paths<span class="sc">$</span>individual.local.identifier)), </span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">aggregate</span>(timestamp <span class="sc">~</span> individual.local.identifier, <span class="at">data =</span> vultures_paths, <span class="at">FUN =</span> length),</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>                    <span class="at">by =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, <span class="at">sort =</span> F)</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>obs_counts</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>s_args <span class="ot">&lt;-</span> <span class="fu">lapply</span>(obs_counts<span class="sc">$</span>timestamp, <span class="cf">function</span>(x) <span class="fu">c</span>(<span class="at">k =</span> <span class="fu">floor</span>(<span class="fu">min</span>(x <span class="sc">/</span> <span class="dv">4</span>, <span class="dv">306</span>))))</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>interp <span class="ot">&lt;-</span> <span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>                        <span class="at">delta.t =</span> <span class="st">&quot;day&quot;</span>,</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>                        <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>                        <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>                        <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>,</span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>                        <span class="at">s_args =</span> s_args,</span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>                        <span class="at">return.paths =</span> T)</span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(interp, <span class="at">i =</span> <span class="dv">2</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>obs_counts <span class="ot">&lt;-</span> <span class="fu">merge</span>(<span class="fu">data.frame</span>(<span class="at">individual.local.identifier =</span> <span class="fu">unique</span>(vultures_paths<span class="sc">$</span>individual.local.identifier)), </span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>                    <span class="fu">aggregate</span>(timestamp <span class="sc">~</span> individual.local.identifier, <span class="at">data =</span> vultures_paths, <span class="at">FUN =</span> length),</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>                    <span class="at">by =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, <span class="at">sort =</span> F)</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>obs_counts</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>s_args <span class="ot">&lt;-</span> <span class="fu">lapply</span>(obs_counts<span class="sc">$</span>timestamp, <span class="cf">function</span>(x) <span class="fu">c</span>(<span class="at">k =</span> <span class="fu">floor</span>(<span class="fu">min</span>(x <span class="sc">/</span> <span class="dv">4</span>, <span class="dv">306</span>))))</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>interp <span class="ot">&lt;-</span> <span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>                        <span class="at">delta.t =</span> <span class="st">&quot;day&quot;</span>,</span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>                        <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>                        <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a>                        <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>,</span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>                        <span class="at">s_args =</span> s_args,</span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>                        <span class="at">return.paths =</span> T)</span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="fu">plot</span>(interp, <span class="at">i =</span> <span class="dv">2</span>)</span></code></pre></div>
 <p>As of version 0.10.2, the default value for the number of knots also
 works well for this example.</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>interp <span class="ot">&lt;-</span> <span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>                        <span class="at">delta.t =</span> <span class="st">&quot;day&quot;</span>,</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>                        <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>                        <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>                        <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>,</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>                        <span class="at">return.paths =</span> T, <span class="at">verbose =</span> T)</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(interp, <span class="at">i =</span> <span class="dv">2</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>interp <span class="ot">&lt;-</span> <span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>                        <span class="at">delta.t =</span> <span class="st">&quot;day&quot;</span>,</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>                        <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>                        <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>                        <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>                        <span class="at">return.paths =</span> T, <span class="at">verbose =</span> T)</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="fu">plot</span>(interp, <span class="at">i =</span> <span class="dv">2</span>)</span></code></pre></div>
 </div>
 <div id="additional-features" class="section level2">
 <h2>Additional features</h2>
@@ -546,24 +553,24 @@ works well for this example.</p>
 <h3>Showing complete trajectories</h3>
 <p>Set <code>whole.path = TRUE</code>. It is not required, but probably
 clearer visually, if we also set <code>tail.length = 0</code>.</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>              <span class="at">delta.t =</span> delta.t,</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">background =</span> background, </span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">whole.path =</span> <span class="cn">TRUE</span>, <span class="at">tail.length =</span> <span class="dv">0</span>, <span class="at">img.name =</span> <span class="st">&quot;whole_traj&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>              <span class="at">delta.t =</span> delta.t,</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>              <span class="at">background =</span> background, </span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>              <span class="at">whole.path =</span> <span class="cn">TRUE</span>, <span class="at">tail.length =</span> <span class="dv">0</span>, <span class="at">img.name =</span> <span class="st">&quot;whole_traj&quot;</span>)</span></code></pre></div>
 </div>
 <div id="dimming-selected-individuals" class="section level3">
 <h3>Dimming selected individuals</h3>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>vultures_paths <span class="ot">&lt;-</span> vultures[<span class="fu">format</span>(vultures<span class="sc">$</span>POSIX, <span class="st">&quot;%Y&quot;</span>) <span class="sc">==</span> <span class="dv">2009</span> <span class="sc">&amp;</span> </span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>                             vultures<span class="sc">$</span>location.lat <span class="sc">&gt;</span> <span class="dv">32</span>, ]</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>              <span class="at">delta.t =</span> delta.t,</span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">background =</span> background, <span class="at">dimmed =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">5</span>), <span class="at">img.name =</span> <span class="st">&quot;dim&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>vultures_paths <span class="ot">&lt;-</span> vultures[<span class="fu">format</span>(vultures<span class="sc">$</span>POSIX, <span class="st">&quot;%Y&quot;</span>) <span class="sc">==</span> <span class="dv">2009</span> <span class="sc">&amp;</span> </span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>                             vultures<span class="sc">$</span>location.lat <span class="sc">&gt;</span> <span class="dv">32</span>, ]</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>              <span class="at">delta.t =</span> delta.t,</span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a>              <span class="at">background =</span> background, <span class="at">dimmed =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">5</span>), <span class="at">img.name =</span> <span class="st">&quot;dim&quot;</span>)</span></code></pre></div>
 </div>
 <div id="showing-relational-information-beta" class="section level3">
 <h3>Showing relational information (beta)</h3>
@@ -575,28 +582,28 @@ information is on a different time scale than the position information,
 it will be interpolated using smoothing splines to match.</p>
 <p>We don’t have existing relationships among the vultures to display,
 so we’ll make some up for the purposes of demonstration.</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>vultures_paths <span class="ot">&lt;-</span> vultures[<span class="fu">format</span>(vultures<span class="sc">$</span>POSIX, <span class="st">&quot;%Y&quot;</span>) <span class="sc">==</span> <span class="dv">2009</span>, ]</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>n_indiv <span class="ot">&lt;-</span> <span class="fu">length</span>(<span class="fu">unique</span>(vultures_paths<span class="sc">$</span>individual.local.identifier))</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>change_pts <span class="ot">&lt;-</span> <span class="dv">5</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>network.times <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="fu">min</span>(vultures_paths<span class="sc">$</span>POSIX), <span class="fu">max</span>(vultures_paths<span class="sc">$</span>POSIX), <span class="at">l =</span> change_pts <span class="sc">+</span> <span class="dv">2</span>)</span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>network <span class="ot">&lt;-</span> <span class="fu">array</span>(<span class="cn">NA</span>, <span class="at">dim =</span> <span class="fu">c</span>(n_indiv, n_indiv, <span class="fu">length</span>(network.times)))</span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(time_i <span class="cf">in</span> <span class="dv">2</span><span class="sc">:</span><span class="fu">length</span>(network.times)){</span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>  network_mat <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">0</span>, n_indiv<span class="sc">^</span><span class="dv">2</span>, <span class="at">prob =</span> <span class="fu">c</span>(<span class="fl">0.1</span>, <span class="fl">0.9</span>), <span class="at">replace =</span> T), </span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>                        n_indiv, n_indiv)</span>
-<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  network_mat[<span class="fu">lower.tri</span>(network_mat)] <span class="ot">&lt;-</span> <span class="fu">t</span>(network_mat)[<span class="fu">lower.tri</span>(network_mat)]</span>
-<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">diag</span>(network_mat) <span class="ot">&lt;-</span> <span class="dv">1</span></span>
-<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>  network[, , (time_i <span class="sc">-</span> <span class="dv">1</span>)<span class="sc">:</span>time_i] <span class="ot">&lt;-</span> network_mat</span>
-<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>delta.t <span class="ot">&lt;-</span> <span class="dv">3600</span><span class="sc">*</span><span class="dv">24</span><span class="sc">*</span><span class="dv">2</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>              <span class="at">delta.t =</span> delta.t,</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>,</span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">background =</span> background, <span class="at">network =</span> network, <span class="at">network.times =</span> network.times,</span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">img.name =</span> <span class="st">&quot;network&quot;</span>)</span></code></pre></div>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system</span>(<span class="st">&quot;rm -r js; rm -r css; rm -r images; rm index.html&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>vultures_paths <span class="ot">&lt;-</span> vultures[<span class="fu">format</span>(vultures<span class="sc">$</span>POSIX, <span class="st">&quot;%Y&quot;</span>) <span class="sc">==</span> <span class="dv">2009</span>, ]</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>n_indiv <span class="ot">&lt;-</span> <span class="fu">length</span>(<span class="fu">unique</span>(vultures_paths<span class="sc">$</span>individual.local.identifier))</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>change_pts <span class="ot">&lt;-</span> <span class="dv">5</span></span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>network.times <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="fu">min</span>(vultures_paths<span class="sc">$</span>POSIX), <span class="fu">max</span>(vultures_paths<span class="sc">$</span>POSIX), <span class="at">l =</span> change_pts <span class="sc">+</span> <span class="dv">2</span>)</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>network <span class="ot">&lt;-</span> <span class="fu">array</span>(<span class="cn">NA</span>, <span class="at">dim =</span> <span class="fu">c</span>(n_indiv, n_indiv, <span class="fu">length</span>(network.times)))</span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="cf">for</span>(time_i <span class="cf">in</span> <span class="dv">2</span><span class="sc">:</span><span class="fu">length</span>(network.times)){</span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a>  network_mat <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">0</span>, n_indiv<span class="sc">^</span><span class="dv">2</span>, <span class="at">prob =</span> <span class="fu">c</span>(<span class="fl">0.1</span>, <span class="fl">0.9</span>), <span class="at">replace =</span> T), </span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a>                        n_indiv, n_indiv)</span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a>  network_mat[<span class="fu">lower.tri</span>(network_mat)] <span class="ot">&lt;-</span> <span class="fu">t</span>(network_mat)[<span class="fu">lower.tri</span>(network_mat)]</span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a>  <span class="fu">diag</span>(network_mat) <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a>  network[, , (time_i <span class="sc">-</span> <span class="dv">1</span>)<span class="sc">:</span>time_i] <span class="ot">&lt;-</span> network_mat</span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>delta.t <span class="ot">&lt;-</span> <span class="dv">3600</span><span class="sc">*</span><span class="dv">24</span><span class="sc">*</span><span class="dv">2</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>              <span class="at">delta.t =</span> delta.t,</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>,</span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>              <span class="at">background =</span> background, <span class="at">network =</span> network, <span class="at">network.times =</span> network.times,</span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>              <span class="at">img.name =</span> <span class="st">&quot;network&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">system</span>(<span class="st">&quot;rm -r js; rm -r css; rm -r images; rm index.html&quot;</span>)</span></code></pre></div>
 </div>
 </div>
 

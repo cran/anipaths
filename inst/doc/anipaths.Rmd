@@ -66,16 +66,15 @@ animate_paths(paths = vultures_paths,
 
 You can also supply your own background image. The projection and units should match the data.
 ```{r map_simple}
-background <- rworldmap::getMap(resolution = "coarse")
-sp::proj4string(background) ## matches default projection in animate_paths()
-# background <- data.frame(x = range(vultures_paths$location.long)[c(1, 2, 2, 1, 1)],
-#                          y = range(vultures_paths$location.lat)[c(1, 1, 2, 2, 1)])
+background <- geodata::world(path = ".")
+sf::st_crs(background)$proj4string ## matches default projection in animate_paths()
 animate_paths(paths = vultures_paths, 
               delta.t = "week",
               coord = c("location.long", "location.lat"),
               Time.name = "POSIX",
               ID.name = "individual.local.identifier", 
               background = background, img.name = "background_user")
+system("rm -r gadm") ## remove geodata map from machine
 ```
 
 The function `animate_paths()` must project the data to match Google's map tiles, so if your data aren't in long/lat format, make sure you update the `paths.proj` variable with the correct string.
@@ -99,8 +98,8 @@ The covariates have now been appended to the `paths` data frame. We can let `ani
 
 ```{r plot_covariates}
 delta.t <- "day"
-background <- rworldmap::getMap(resolution = "coarse")
-sp::proj4string(background)
+background <- geodata::world(path = ".")
+sf::st_crs(background)$proj4string ## matches default projection in animate_paths()
 animate_paths(paths = vultures_paths, 
               delta.t = delta.t,
               coord = c("location.long", "location.lat"),
@@ -108,6 +107,7 @@ animate_paths(paths = vultures_paths,
               covariate = "behavior", covariate.colors = viridis::viridis(3),
               ID.name = "individual.local.identifier",
               background = background, img.name = "covariates")
+system("rm -r gadm") ## remove geodata map from machine
 ```
 
 *Note*: if a covariate is represented numerically but should be treated as a factor, changing the class using `as.factor()` should prevent `animate_paths()` from interpolating to "intermediate" values (e.g., if male and female are coded as 0 and 1, defining the column of the data frame as a factor will constrain individuals to only take on values of 0 and 1).

@@ -33,7 +33,7 @@ gam_interp <- function(formula = NULL, y, time, pred_times, se.fit = T, s_args =
   if(isTRUE(verbose)) print.gam(fit)
   if(uncertainty.type > 1 & is.numeric(uncertainty.type)){
     pred <- predict.gam(fit, newdata = data.frame(time = as.numeric(pred_times)), se.fit = se.fit, type = "lpmatrix")
-    beta <- mvtnorm::rmvnorm(n = uncertainty.type, mean = fit$coefficients, sigma = fit$Vp)
+    beta <- rmvnorm(n = uncertainty.type, mean = fit$coefficients, sigma = fit$Vp)
     f <- pred %*% t(beta) ## compute all possible paths
     return(f)
   } else{

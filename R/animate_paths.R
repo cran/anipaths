@@ -12,13 +12,13 @@
 #' Animates telemetry data for the purposed of EDA using smoothing splines to interpolate the observed locations. The animations are particularly useful when examining multiple simultaneous trajectories. The output of the call to \code{animate_paths()} should bring up a browser window that shows the animation. Additionally, the images generated in \code{images/} (or else the value set for \code{imgdir}) may be used with ffmpeg, latex, or other presentation software that can build animations directly from a sequence of images.
 #'
 #' @param paths Either a \code{data.frame} with longitudes/eastings, latitudes/northings, IDs, and times (see \code{coord}, \code{ID.name}, and \code{Time.name}), a \code{SpatialPointsDataFrame} with IDs and times, or a list of data.frames containing the longitudes, latitudes, and times for each individual (with names provided).
-#' If all paths are already synchornous, another option for passing the data is to define \code{paths} as a list of matrices, all with the same number of rows, and to specify the times separately via the next argument. This situation might arise when, for example, locations the user wishes to animated correspond to realizations/sampler from a discrete-time movement model. Covariates may be provided as named columns of the matrices in \code{paths}.
+#' If all paths are already synchronous, another option for passing the data is to define \code{paths} as a list of matrices, all with the same number of rows, and to specify the times separately via the next argument. This situation might arise when, for example, locations the user wishes to animated correspond to realizations/sampler from a discrete-time movement model. Covariates may be provided as named columns of the matrices in \code{paths}.
 #' @param coord A character vector of length 2 giving the names of the longitude/easting and latitude/northing columns in the \code{paths} \code{data.frame} (in that order). This is required if \code{paths} is not a \code{SpatialPointsDataFrame}.
 #' @param Time.name The name of the columns in \code{paths} gving the observation times. This column must be of class \code{POSIXt}, or numeric.
-#' @param background Three possibilities: (1) A single background image over which animation will be overlayed, or a list/stack of images/rasters corresponding to each frame. (2) A list with values \code{center} (long/lat), \code{zoom}, and \code{maptype} (see \code{ggmap::get_googlemap()}) which will be used to generate a background for the animation based on Google maps tiles. Additional arguments may be added which will be passed to \code{ggmap::get_googlemap()}. (3) A logical value of \code{TRUE}, which will cue the function to get the best Google Map tile combination it can come up with. Note: \code{ggmap} must be installed for (2) and (3). Note: if you are calling \code{animate_paths()} several times in a short period of time you may get an error from Google for trying to pull tiles too often (e.g., \code{Error in download.file(url, destfile = tmp, quiet = !messaging, mode = "wb") : cannot open URL 'http://maps.googleapis...'}). Waiting a minute or so usually solves this.
+#' @param background Three possibilities: (1) A single background image over which animation will be overlayed, or a SpatRaster objects with one layers corresponding to each frame. (2) A list with values \code{center} (long/lat), \code{zoom}, and \code{maptype} (see \code{ggmap::get_googlemap()}) which will be used to generate a background for the animation based on Google maps tiles. Additional arguments may be added which will be passed to \code{ggmap::get_googlemap()}. (3) A logical value of \code{TRUE}, which will cue the function to get the best Google Map tile combination it can come up with. Note: \code{ggmap} must be installed for (2) and (3). Note: if you are calling \code{animate_paths()} several times in a short period of time you may get an error from Google for trying to pull tiles too often (e.g., \code{Error in download.file(url, destfile = tmp, quiet = !messaging, mode = "wb") : cannot open URL 'http://maps.googleapis...'}). Waiting a minute or so usually solves this.
 #' @param bg.axes logical: should animation place axis labels when using a background image (default is \code{TRUE}). If \code{RGoogleMaps} is used to produce background, labels will be "northing" and "easting". Otherwise, the strings given to \code{coord} will be used.
 #' @param bg.misc Character string which will be executed as \code{R} code after generating the background, and before adding trajectories, etc.
-#' @param bg.opts Options passed to \code{plot()} function call that makes background in each frame. For example, this could be used to specify blue ocean and gray landcover if \code{background} is a \code{SpatialPolygonsDataFrame} and \code{bg.opts = list(bg = "dodgerblue4", col = "gray", border = "gray")}.
+#' @param bg.opts Options passed to \code{plot()} function call that makes background in each frame. For example, this could be used to specify blue ocean and gray landcover if \code{background} is a \code{MULTIPOLYGON} simple features object and \code{bg.opts = list(bg = "dodgerblue4", col = "gray", border = "gray")}.
 #' @param blur.size a integer of the size for blur points; default is 8
 #' @param covariate The name of the column in \code{paths} that identifies the covariate to be mapped to a ring of color around each point.
 #' @param covariate.colors vector of colors which will be used in their given order to make a color ramp (see \code{colorRamp()})
@@ -49,7 +49,7 @@
 #' @param override Logical variable toggling where or not to override warnings about how long the animation procedure will take.
 #' @param par.opts Options passed to \code{par()} before creating each frame.
 #' @param paths.proj PROJ.4 string corresponding to the projection of the data. Default is "+proj=longlat".
-#' @param paths.tranform.crs a character string of CRS coordinate projection transformation based on the animals' location; default is "+proj=aea +lat_1=30 +lat_2=70".
+#' @param paths.tranform.crs a PROJ.4 string of coordinate projection transformation based on the animals' location; default is "+proj=aea +lat_1=30 +lat_2=70".
 #' @param plot.date Logical variable toggling date text at the time center of the animation.
 #' @param pt.alpha alpha value for the points
 #' @param pt.cex A numeric value giving the character expansion (size) of the points for each individual. Default is 1.
@@ -65,7 +65,7 @@
 #' @param tail.length Length of the tail trailing each individual.
 #' @param tail.wd Thickness of tail trailing behind each individual. Default is 1.
 #' @param theme_map plot theme for \code{ggplot}, default is \code{NULL}
-#' @param times If all paths are already synchornous, another option for passing the data is to define \code{paths} as a list of matrices, all with the same number of rows, and to specify the times separately via this argument.
+#' @param times If all paths are already synchronous, another option for passing the data is to define \code{paths} as a list of matrices, all with the same number of rows, and to specify the times separately via this argument.
 #' @param uncertainty.level value in (0, 1) corresponding to \code{level} at which to draw uncertainty ellipses. \code{NA} (default) results in no ellipses.
 #' @param uncertainty.type State what type of uncertainty plot 1 is default for tails more than 1 is amount of predicted trajectories for each unique individual and blurs for blur plot
 #' @param whole.path logical. If \code{TRUE} (default = \code{FALSE}), the complete interpolated trajectories will be plotted in the background of the animation. If \code{whole.path = TRUE}, consider also setting \code{tail.length = 0}.
@@ -80,12 +80,9 @@
 #' @importFrom stats as.formula predict approx reshape
 #' @importFrom animation ani.options saveHTML saveVideo
 #' @importFrom graphics par plot mtext axis segments points legend
-#' @importFrom sp coordnames
-#' @importFrom sf st_as_sf st_transform
-#' @importFrom grDevices png dev.off colorRamp
-#' @importFrom ggmap get_googlemap
-#' @importFrom raster nlayers
-#' @importFrom scales alpha
+#' @importFrom sf st_as_sf st_transform st_crs st_drop_geometry st_coordinates
+#' @importFrom grDevices png dev.off colorRamp adjustcolor
+#' @importFrom ggmap get_googlemap calc_zoom
 #' @importFrom mvtnorm rmvnorm
 #'
 #' @examples ##
@@ -176,10 +173,13 @@ animate_paths <- function(paths, coord = c("x", "y"), Time.name = "time",
   }
   ## SpatialPointsDataFrame ----
   if (inherits(paths, "SpatialPointsDataFrame")) {
-    message("\n SpatialPointsDataFrame object detected.")
-    coord <- coordnames(paths)
-    paths.proj <- proj4string(paths)
-    paths <- as.data.frame(paths)
+    stop("\n SpatialPointsDataFrame object detected. Support for sp package-type objects no longer available in anipaths.")
+  }
+  if(inherits(paths, 'sf')){
+    message("\n sf object detected.")
+    coord <- c('X', 'Y')
+    paths.proj <- st_crs(paths)
+    paths <- cbind(st_drop_geometry(paths), st_coordinates(paths))
     ID_names <- unique(paths[, ID.name])
   }
   ## warn about covariate/network + uncertainty ----
@@ -187,8 +187,8 @@ animate_paths <- function(paths, coord = c("x", "y"), Time.name = "time",
      any(!is.null(simulation), crawl.plot.type == "blur.tail")){
     message("Covariate/network interpolation and visualization not yet compatible with uncertainty visualization.")
   }
-  ## take data from "raw" df form to lists organized by individual + ----
-  ## get covariate.interp from covariate ----
+  ## take data from "raw" df form to lists organized by individual ----
+  ## get covariate.interp from covariate
   covariate.name <- covariate
   if (is.data.frame(paths)) {
     paths.df <- paths
@@ -378,7 +378,7 @@ animate_paths <- function(paths, coord = c("x", "y"), Time.name = "time",
       bounding_box <- st_coordinates(bounding_box_ll)
     }
     center <- colMeans(bounding_box)
-    zoom <- ggmap::calc_zoom(bounding_box[, 1], bounding_box[, 2]) - 1
+    zoom <- calc_zoom(bounding_box[, 1], bounding_box[, 2]) - 1
     background <- list("center" = center, "zoom" = zoom, "maptype" = "hybrid")
   }
   if (sum(names(background) %in% c("center", "zoom", "maptype")) == 3) {
@@ -396,7 +396,11 @@ animate_paths <- function(paths, coord = c("x", "y"), Time.name = "time",
     bg <- background
   }
   if (inherits(background, "RasterStack")) {
-    if (nlayers(background) == n.frames) {
+    stop("RasterStack background detected. raster package-type objects no longer supported in anipaths.")
+  }
+  if (inherits(background, "SpatRaster")){
+    message("SpatRaster background detected.")
+    if (length(background) == n.frames) {
       bg <- background
     }
   }
@@ -432,7 +436,7 @@ animate_paths <- function(paths, coord = c("x", "y"), Time.name = "time",
     }
     pt.colors <- cbind(
       pt.colors[(1:length(paths) - 1) %% length(pt.colors) + 1],
-      alpha("lightgray", 0.5)
+      adjustcolor("lightgray", 0.5)
     )
   }
   if (!is.null(covariate)) {
@@ -456,55 +460,6 @@ animate_paths <- function(paths, coord = c("x", "y"), Time.name = "time",
         }
       }
       scale <- get_googlemap_min_scale(bg[[1]])$scale
-      # bb.map <- attr(bg[[1]], "bb")
-      # if (bb.map[1] < -90) {
-      #   bb.map[1] <- -180 - bb.map[1]
-      # }
-      # if (bb.map[2] < -180) {
-      #   bb.map[2] <- 360 + bb.map[2]
-      # }
-      # if (bb.map[3] > 90) {
-      #   bb.map[3] <- 180 - bb.map[3]
-      # }
-      # if (bb.map[4] > 180) {
-      #   bb.map[4] <- bb.map[4] - 360
-      # }
-      # 
-      # bb.map <- as.data.frame(t(matrix(as.numeric(bb.map), 2, 2)))
-      # names(bb.map) <- c("lat", "long")
-      # coordinates(bb.map) <- c("long", "lat")
-      # proj4string(bb.map) <- CRS("+proj=longlat")
-      # bb <- spTransform(bb.map, CRSobj = CRS(paste(
-      #   "+proj=merc +a=6378137 +b=6378137",
-      #   "+lat_ts=0.0 +lon_0=0 +x_0=0.0 +y_0=0",
-      #   "+k=1.0 +units=m +nadgrids=@null +wktext +no_defs"
-      # )))
-      # bb <- coordinates(bb)
-      # center <- bb[1, c("long", "lat")]
-      # scale <- 1280 / (apply(bb, 2, diff))
-      # paths.interp <- sapply(1:length(paths.interp), function(i) {
-      #   path.i <- paths.interp[[i]]
-      #   if (!is.null(paths.proj)) {
-      #     for (j in 1:ncol(path.i)){
-      #     path.i.sp.ind <- which(!is.na(path.i[, j,1]))
-      #     path.i.sp <- as.data.frame(path.i[path.i.sp.ind, j, ])
-      #     coordinates(path.i.sp) <- c("mu.x", "mu.y")
-      #     proj4string(path.i.sp) <- CRS(paths.proj)
-      #     path.i[path.i.sp.ind, j,c("mu.x", "mu.y")] <-
-      #       spTransform(path.i.sp, CRSobj = CRS(paste("+proj=longlat")))@coords
-      #     path.i[path.i.sp.ind, j,c("mu.x", "mu.y")] <-
-      #       spTransform(path.i.sp, CRSobj = CRS(paste(
-      #         "+proj=merc +a=6378137 +b=6378137",
-      #         "+lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0",
-      #         "+k=1.0 +units=m +no_defs"
-      #       )))@coords
-      #     path.i[,j,c("mu.x","mu.y","se.mu.x","se.mu.y")] <- cbind(t((t(path.i[, j,c("mu.x", "mu.y")]) - center) * scale), 
-      #                        path.i[, j,c("se.mu.x", "se.mu.y")])
-      #   }}
-      #   return(path.i)
-      #   }, simplify = F)
-      
-      
       if (bg.axes) {
         message(paste0(
           "Note: Due to complications implemeting Google Maps tiles, ",

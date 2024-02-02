@@ -12,7 +12,7 @@
 
 <meta name="author" content="Kristine Dinh, Henry Scharf" />
 
-<meta name="date" content="2023-01-08" />
+<meta name="date" content="2024-02-01" />
 
 <title>Animating Animal Trajectories Using Correlated RAndom Walk Library (crawl)</title>
 
@@ -121,13 +121,20 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
   for (var i = 0; i < sheets.length; i++) {
     if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
     try { var rules = sheets[i].cssRules; } catch (e) { continue; }
-    for (var j = 0; j < rules.length; j++) {
+    var j = 0;
+    while (j < rules.length) {
       var rule = rules[j];
       // check if there is a div.sourceCode rule
-      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
       var style = rule.style.cssText;
       // check if color or background-color is set
-      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
       // replace div.sourceCode by a pre.sourceCode rule
       sheets[i].deleteRule(j);
       sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
@@ -334,7 +341,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <h1 class="title toc-ignore">Animating Animal Trajectories Using
 Correlated RAndom Walk Library (crawl)</h1>
 <h4 class="author">Kristine Dinh, Henry Scharf</h4>
-<h4 class="date">2023-01-08</h4>
+<h4 class="date">2024-02-01</h4>
 
 
 <div id="TOC">
@@ -380,9 +387,9 @@ diameter.</p>
 <p>In addition to <code>anipaths</code>, load packages
 <code>tidyverse</code>, and <code>magrittr</code> to prepare the
 data.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(anipaths)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(magrittr)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(anipaths)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">library</span>(magrittr)</span></code></pre></div>
 <p>The <code>vultures</code> dataset is a built in data inside the
 <code>anipaths</code> package. We will use <code>vultures</code> to
 illustrate the functionality of the package. To prepare the data, we
@@ -390,16 +397,16 @@ need to create a time stamp variable of class <code>numeric</code> or
 <code>POSIX</code>. If you wish to specify the interval of predicted
 time as a character string (e.g., <code>&quot;day&quot;</code>), the class of your
 time variable must be <code>POSIX</code>.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>vultures <span class="sc">%&lt;&gt;%</span> </span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">POSIX =</span> <span class="fu">as.POSIXct</span>(timestamp, <span class="at">tz =</span> <span class="st">&quot;UTC&quot;</span>))</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>vultures_spring11 <span class="ot">&lt;-</span> vultures <span class="sc">%&gt;%</span> </span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(POSIX <span class="sc">&gt;</span> <span class="fu">as.POSIXct</span>(<span class="st">&quot;2011-04-05&quot;</span>, <span class="at">origin =</span> <span class="st">&quot;1970-01-01&quot;</span>) <span class="sc">&amp;</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>           POSIX <span class="sc">&lt;</span> <span class="fu">as.POSIXct</span>(<span class="st">&quot;2011-05-05&quot;</span>, <span class="at">origin =</span> <span class="st">&quot;1970-01-01&quot;</span>)</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>         <span class="sc">&amp;</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>           (individual.local.identifier <span class="sc">%in%</span></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>           <span class="fu">c</span>(<span class="st">&#39;Argentina&#39;</span>, <span class="st">&#39;Domingo&#39;</span>, <span class="st">&#39;La Pampa&#39;</span>, <span class="st">&#39;Whitey&#39;</span>, <span class="st">&#39;Young Luro&#39;</span>))</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>vultures <span class="sc">%&lt;&gt;%</span> </span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">POSIX =</span> <span class="fu">as.POSIXct</span>(timestamp, <span class="at">tz =</span> <span class="st">&quot;UTC&quot;</span>))</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>vultures_spring11 <span class="ot">&lt;-</span> vultures <span class="sc">%&gt;%</span> </span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>  <span class="fu">filter</span>(POSIX <span class="sc">&gt;</span> <span class="fu">as.POSIXct</span>(<span class="st">&quot;2011-04-05&quot;</span>, <span class="at">origin =</span> <span class="st">&quot;1970-01-01&quot;</span>) <span class="sc">&amp;</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>           POSIX <span class="sc">&lt;</span> <span class="fu">as.POSIXct</span>(<span class="st">&quot;2011-05-05&quot;</span>, <span class="at">origin =</span> <span class="st">&quot;1970-01-01&quot;</span>)</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>         <span class="sc">&amp;</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>           (individual.local.identifier <span class="sc">%in%</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>           <span class="fu">c</span>(<span class="st">&#39;Argentina&#39;</span>, <span class="st">&#39;Domingo&#39;</span>, <span class="st">&#39;La Pampa&#39;</span>, <span class="st">&#39;Whitey&#39;</span>, <span class="st">&#39;Young Luro&#39;</span>))</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>  )</span></code></pre></div>
 <p>In addition, the data must have an easting/longitude and
 northing/latitude variable. You can set the name for your coordinate
 using the <code>coord</code> argument (default is
@@ -414,34 +421,34 @@ trajectories will be generated in addition to a single best-estimate of
 the true trajectories. The animation will represent each animal with one
 point, and 5 + 1 lines for each simulation and best prediction
 paths.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_spring11,</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>              <span class="at">delta.t =</span> <span class="st">&quot;day&quot;</span>,</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>,</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">interpolation_type =</span> <span class="st">&quot;crawl&quot;</span>,</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">simulation =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_spring11,</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>              <span class="at">delta.t =</span> <span class="st">&quot;day&quot;</span>,</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>              <span class="at">interpolation_type =</span> <span class="st">&quot;crawl&quot;</span>,</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>              <span class="at">simulation =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
 <p>The interval of time can also be changed to several hours instead of
 days. At this finer resolution the simulated trajectories are more
 visible, although it does take longer to produce the animation because
 more images are used.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_spring11,</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>              <span class="at">delta.t =</span> <span class="dv">3600</span> <span class="sc">*</span> <span class="dv">4</span>,</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">interpolation_type =</span> <span class="st">&quot;crawl&quot;</span>,</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">simulation =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_spring11,</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>              <span class="at">delta.t =</span> <span class="dv">3600</span> <span class="sc">*</span> <span class="dv">4</span>,</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>              <span class="at">interpolation_type =</span> <span class="st">&quot;crawl&quot;</span>,</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>              <span class="at">simulation =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
 <p>Besides an individual point for each animal, a blur point is also
 available to depict pointwise uncertainty. The larger the blurred point,
 the larger the uncertainty.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_spring11,</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>              <span class="at">delta.t =</span> <span class="dv">3600</span> <span class="sc">*</span> <span class="dv">6</span>,</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">interpolation_type =</span> <span class="st">&quot;crawl&quot;</span>,</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">crawl.plot.type =</span> <span class="st">&quot;blur.tail&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_spring11,</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>              <span class="at">delta.t =</span> <span class="dv">3600</span> <span class="sc">*</span> <span class="dv">6</span>,</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>              <span class="at">interpolation_type =</span> <span class="st">&quot;crawl&quot;</span>,</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>              <span class="at">crawl.plot.type =</span> <span class="st">&quot;blur.tail&quot;</span>)</span></code></pre></div>
 </div>
 <div id="animation-using-crawl-interpolation-with-tails-and-background" class="section level3">
 <h3>Animation Using <code>crawl</code> Interpolation with Tails and
@@ -456,20 +463,20 @@ map. This <code>TRUE</code> statement will produce an automatically
 chosen background map that attempts to match the extent of the data.
 Another way to set a background is to provide information on the center,
 zoom, and type of the desired map tiles.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>background <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">center =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">70</span>, <span class="sc">-</span><span class="dv">20</span>),</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">zoom =</span> <span class="dv">4</span>,</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>                   <span class="at">maptype =</span> <span class="st">&quot;satellite&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>background <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">center =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">70</span>, <span class="sc">-</span><span class="dv">20</span>),</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>                   <span class="at">zoom =</span> <span class="dv">4</span>,</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>                   <span class="at">maptype =</span> <span class="st">&quot;satellite&quot;</span>)</span></code></pre></div>
 <p>Once a background has been defined, simply run the
 <code>animate_paths()</code> function with an additional parameter
 <code>background = background</code>.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggmap)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_spring11,</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>              <span class="at">delta.t =</span> <span class="dv">3600</span> <span class="sc">*</span> <span class="dv">6</span>,</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">background =</span> background,</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">interpolation_type =</span> <span class="st">&quot;crawl&quot;</span>, <span class="at">simulation =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">library</span>(ggmap)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_spring11,</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>              <span class="at">delta.t =</span> <span class="dv">3600</span> <span class="sc">*</span> <span class="dv">6</span>,</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>              <span class="at">background =</span> background,</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>              <span class="at">interpolation_type =</span> <span class="st">&quot;crawl&quot;</span>, <span class="at">simulation =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
 </div>
 <div id="animation-for-a-single-animal-using-crawl-interpolation" class="section level3">
 <h3>Animation for a Single Animal Using <code>crawl</code>
@@ -479,17 +486,17 @@ movement in details with a a zoomed in window. We can focus on one
 individual in the vultures application by first sub-setting the data to
 select only one animal. For this example, we isolated Irma in the
 animation.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>vultures_Whitey <span class="ot">&lt;-</span> vultures_spring11 <span class="sc">%&gt;%</span> </span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(individual.local.identifier <span class="sc">==</span> <span class="st">&quot;Whitey&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>vultures_Whitey <span class="ot">&lt;-</span> vultures_spring11 <span class="sc">%&gt;%</span> </span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  <span class="fu">filter</span>(individual.local.identifier <span class="sc">==</span> <span class="st">&quot;Whitey&quot;</span>)</span></code></pre></div>
 <p>Then, run the same <code>animate_paths</code> function with the same
 parameters as specified before.</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_Whitey,</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>              <span class="at">delta.t =</span> <span class="dv">3600</span> <span class="sc">*</span> <span class="dv">4</span>,</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">interpolation_type =</span> <span class="st">&quot;crawl&quot;</span>, <span class="at">background =</span> T,</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">simulation =</span> <span class="cn">TRUE</span>, <span class="at">main =</span> <span class="st">&quot;Whitey&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_Whitey,</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>              <span class="at">delta.t =</span> <span class="dv">3600</span> <span class="sc">*</span> <span class="dv">4</span>,</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>, </span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>              <span class="at">interpolation_type =</span> <span class="st">&quot;crawl&quot;</span>, <span class="at">background =</span> T,</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>              <span class="at">simulation =</span> <span class="cn">TRUE</span>, <span class="at">main =</span> <span class="st">&quot;Whitey&quot;</span>)</span></code></pre></div>
 </div>
 <div id="additional-parameters-to-customize-animations" class="section level3">
 <h3>Additional parameters to Customize Animations</h3>

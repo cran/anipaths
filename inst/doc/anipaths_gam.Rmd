@@ -56,10 +56,8 @@ Understanding uncertainty associated with interpolated trajectories is critical 
 Next, I will create multiple trajectories animation with a background image. This displays additional paths that the animal could plausibly have taken. To create a background create a list object with the coordinates and map type or state `background` to be `TRUE` (requires Google Maps API key). To choose the multiple trajectories animation choose the `uncertainty.type` argument to be a value greater than one which chooses how many paths you want to display. You can choose `tail.colors` to be `unique` so that the tail colors of each animal will be different.
 
 ```{r multiple_bg, eval = F}
-library(ggmap)
-background <- list(center = c(-90, 10), 
-                   zoom = 3, 
-                   maptype = "satellite")
+background <- geodata::world(path = ".")
+sf::st_crs(background)$proj4string ## matches default projection in animate_paths()
 delta.t <- "week"
 animate_paths(paths = vultures_paths, 
               delta.t = delta.t,
@@ -70,6 +68,7 @@ animate_paths(paths = vultures_paths,
               tail.colors = "unique",
               tail.wd = 0.7,
               background = background)
+system("rm -r gadm") ## remove geodata map from machine
 ```
 
 ```{r, eval = F}
@@ -94,8 +93,7 @@ animate_paths(paths = whales_paths,
               ID.name = "individual.local.identifier",
               uncertainty.type = 5,
               tail.colors = "unique",
-              tail.wd = 0.5,
-              background = TRUE)
+              tail.wd = 0.5)
 ```
 
 
@@ -103,7 +101,6 @@ animate_paths(paths = whales_paths,
 ## remove files used to generate animation
 system("rm -r index.html css js images")
 ```
-
 
 ### Blurred Ellipses
 

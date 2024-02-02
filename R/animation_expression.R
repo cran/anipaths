@@ -68,8 +68,7 @@
 #' @import ellipse
 #' @import ggplot2
 #' @import ggmap ggmap
-#' @importFrom scales alpha
-#' @importFrom grDevices rgb
+#' @importFrom grDevices rgb adjustcolor
 #' @importFrom animation saveHTML saveVideo ani.options
 #' @importFrom dplyr filter
 #' @importFrom lubridate as_date
@@ -107,11 +106,11 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
         ## set par options ----
         do.call(par, par.opts)
         ## add background ----
+        par(mar = c(0.1, 0.1, 0.1, 0.1))
+        if (bg.axes) {
+          par(mar = c(4.1, 4.1, 0.1, 0.1))
+        }
         if (inherits(bg[[frame]], "ggmap")) {
-          par(mar = c(0.1, 0.1, 0.1, 0.1))
-          if (bg.axes) {
-            par(mar = c(4.1, 4.1, 0.1, 0.1))
-          }
           do.call(plot, c(list("x" = bg[[frame]]), xlab = "", ylab = "", bg.opts))
           if (bg.axes) {
             mtext(text = "easting [m]", side = 1, line = 2.6)
@@ -119,28 +118,23 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
             mtext(text = "northing [m]", side = 2, line = 2.6)
             axis(2, at = seq(0, 1280, l = 5), signif(seq(0, 1280 / scale[2], l = 5), 3))
           }
+        } 
+        if (length(grep("Spat", class(bg[[frame]]))) > 0){
+          do.call(terra::plot, c(
+            list(
+              "x" = bg[[frame]], xlab = "", ylab = "",
+              "xlim" = xlim, "ylim" = ylim, "main" = main
+            ),
+            bg.opts
+          ))
         } else {
-          par(mar = c(0.1, 0.1, 0.1, 0.1))
-          if (bg.axes) {
-            par(mar = c(4.1, 4.1, 0.1, 0.1))
-          }
-          if(inherits(bg[[frame]], "SpatialPolygonsDataFrame")){
-            do.call(sp::plot, c(
-              list(
-                "x" = bg[[frame]], xlab = "", ylab = "",
-                "xlim" = xlim, "ylim" = ylim, "main" = main
-              ),
-              bg.opts
-            ))
-          } else {
-            do.call(plot, c(
-              list(
-                "x" = bg[[frame]], xlab = "", ylab = "",
-                "xlim" = xlim, "ylim" = ylim, "main" = main
-              ),
-              bg.opts
-            ))
-          }
+          do.call(plot, c(
+            list(
+              "x" = bg[[frame]], xlab = "", ylab = "",
+              "xlim" = xlim, "ylim" = ylim, "main" = main
+            ),
+            bg.opts
+          ))
           if (bg.axes) {
             mtext(text = coord[1], side = 1, line = 2.6)
             mtext(text = coord[2], side = 2, line = 2.6)
@@ -201,7 +195,7 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
                     y0 = paths.interp[[id]][frame, , "mu.y"],
                     x1 = paths.interp[[id2]][frame, , "mu.x"],
                     y1 = paths.interp[[id2]][frame, , "mu.y"],
-                    col = alpha(cliques$colors[[frame]][cl], network.segment.trans),
+                    col = adjustcolor(cliques$colors[[frame]][cl], network.segment.trans),
                     lwd = network.segment.wt * res
                   )
                 }
@@ -267,7 +261,7 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
               for (id in as.numeric(cliques$cliques[[frame]][[cl]])) {
                 for (id2 in (1:length(paths))[-id]) {
                   points(matrix(paths.interp[[id]][frame, , c("mu.x", "mu.y")], ncol = 2),
-                         col = alpha(colour = cliques$colors[[frame]][cl], network.ring.trans),
+                         col = adjustcolor(cliques$colors[[frame]][cl], network.ring.trans),
                          cex = radius[id], lwd = network.ring.wt * res
                   )
                 }

@@ -1,3 +1,12 @@
+anipaths v0.10.3 (Release date: 2024-2-1)
+==============
+
+Changes: 
+
+* Finalize converstion from `sp` and `raster` to `sf` and `terra`.
+
+* Other minor inter-package compatibility issues fixed.
+
 anipaths v0.10.2 (Release date: 2023-1-6)
 ==============
 

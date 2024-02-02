@@ -34,7 +34,7 @@ crawl_interpolation(
 
 \item{paths.proj}{PROJ.4 string corresponding to the projection of the data}
 
-\item{paths.tranform.crs}{a character string of CRS coordinate projection transformation based on the animals' location.}
+\item{paths.tranform.crs}{a character string of coordinate projection transformation based on the animals' location.}
 
 \item{simulation}{logical. Generate simulation predictions to have multiple projects for the animal paths}
 
@@ -43,8 +43,6 @@ crawl_interpolation(
 \item{time.grid}{grid for synchronized interpolations}
 
 \item{Time.name}{The name of the columns in \code{paths} gving the observation times. This column must be of class \code{POSIXt}, or numeric.}
-
-\item{pt.colors}{A vector of colors to be used for each individual in the animation.}
 }
 \value{
 interpolation values from crawl package

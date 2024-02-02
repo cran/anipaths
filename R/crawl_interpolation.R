@@ -8,8 +8,7 @@
 #' @param n.indiv an integer of the total number of unique animals in the data
 #' @param paths A list of all paths from each animals stored in a \code{data.frame} or \code{SpatialPointsDataFrame} object.
 #' @param paths.proj PROJ.4 string corresponding to the projection of the data
-#' @param paths.tranform.crs a character string of CRS coordinate projection transformation based on the animals' location.
-#' @param pt.colors A vector of colors to be used for each individual in the animation.
+#' @param paths.tranform.crs a character string of coordinate projection transformation based on the animals' location.
 #' @param simulation logical. Generate simulation predictions to have multiple projects for the animal paths
 #' @param simulation.iter an integer of how many paths the crawl model will generate
 #' @param time.grid grid for synchronized interpolations 
@@ -19,10 +18,10 @@
 #' @importFrom crawl crwMLE crwPredict crwSimulator crwPostIS
 #' @importFrom dplyr mutate bind_rows select inner_join 
 #' @importFrom magrittr %<>% %>%
-#' @importFrom sp coordinates coordinates<- proj4string proj4string<- CRS spTransform
 #' @importFrom lubridate ceiling_date floor_date
 #' @importFrom grDevices colorRampPalette
 #' @importFrom tidyr gather
+#' @importFrom sf st_as_sf st_transform st_crs st_drop_geometry st_coordinates st_bbox
 #' @importFrom stringr str_remove
 #' @importFrom tidyselect all_of contains
 #' @importFrom stats median
@@ -35,35 +34,34 @@ crawl_interpolation <- function(coord, delta.t, ID_names, max_refit_attempts, n.
   # add a loop to generate data, fit, and predictions for all objects
   for (paths.i in 1:n.indiv) {
     #### change class of paths to be spatial point data frame + project ----
-    if (!inherits(paths[[paths.i]], "SpatialPointsDataFrame")) {
-      # Need to input a SpatialPointsDataFrame class object to use interpolation from crawl
-      coordinates(paths[[paths.i]]) <- coord
-      proj4string(paths[[paths.i]]) <- CRS(paths.proj)
+    if (!inherits(paths[[paths.i]], "sf")) {
+      # convert to sf object to project
+      paths[[paths.i]] <- st_as_sf(paths[[paths.i]], coords = coord, crs = st_crs(paths.proj))
     }
     
     ## adjust duplicate times or else crawl will haunt your dreams
-    duplicates <- which(diff(paths[[paths.i]]@data[, Time.name]) == 0)
-    paths[[paths.i]]@data[duplicates, Time.name] <- paths[[paths.i]]@data[duplicates, Time.name] + 1e-6
+    duplicates <- which(diff(st_drop_geometry(paths[[paths.i]])[, Time.name]) == 0)
+    paths[[paths.i]][duplicates, Time.name] <- paths[[paths.i]][duplicates, Time.name] + 1e-6
     
     # transform spatial data so the long/lat can be in a suitable format for crawl
     paths.tranform.crs <- paste0(
-      paths.tranform.crs, " +lat_1=", paths[[paths.i]]@bbox[coord[2], "min"],
-      " +lat_2=", paths[[paths.i]]@bbox[coord[2], "max"]
+      paths.tranform.crs, " +lat_1=", st_bbox(paths[[paths.i]])["ymin"],
+      " +lat_2=", st_bbox(paths[[paths.i]])["ymax"]
     )
     
-    paths[[paths.i]] <- spTransform(paths[[paths.i]], CRS(paths.tranform.crs))
+    paths[[paths.i]] <- st_transform(paths[[paths.i]], paths.tranform.crs)
     
     #### prepare to fit the model ----
     # 20210429HRS an attempt at better initial values. 
-    time_steps <- diff(as.numeric(paths[[paths.i]]@data[, Time.name])) / 3600
-    ln_tau_init <- log(median(sqrt(rowSums((apply(paths[[paths.i]]@coords, 2, diff))^2)) / time_steps))
+    time_steps <- diff(as.numeric(st_drop_geometry(paths[[paths.i]])[, Time.name])) / 3600
+    ln_tau_init <- log(median(sqrt(rowSums((apply(st_coordinates(paths[[paths.i]]), 2, diff))^2)) / time_steps))
     theta <- c(
       'ln tau' = ln_tau_init,
       'ln sigma' = ln_tau_init + log(0.25),
       'ln beta' = 0
     )
     # set time frame to predict based on each object
-    obs_window <- range(paths[[paths.i]]@data[, Time.name])
+    obs_window <- range(st_drop_geometry(paths[[paths.i]])[, Time.name])
     predTime <- time.grid[time.grid > obs_window[1] & time.grid < obs_window[2]]
 
     # show progress for user
@@ -209,13 +207,13 @@ crawl_interpolation <- function(coord, delta.t, ID_names, max_refit_attempts, n.
   print_fits <- print_fits[!is.na(print_fits$mu.x) & !is.na(print_fits$mu.y), ]
 
   # tranform data back to original projection string
-  coordinates(print_fits) <- c("mu.x", "mu.y")
-  proj4string(print_fits) <- CRS(paths.tranform.crs)
-
-  print_fits <- spTransform(print_fits, CRS(paths.proj))
+  print_fits <- st_as_sf(print_fits, coords = c("mu.x", "mu.y"), crs = paths.tranform.crs)
+  print_fits <- st_transform(print_fits, paths.proj)
 
   # change print_fits into data.frame object to use in ggplot mapping later
-  print_fits %<>% as.data.frame
+  fits_pts <- st_coordinates(print_fits)
+  colnames(fits_pts) <- c("mu.x", "mu.y")
+  print_fits <- cbind(st_drop_geometry(print_fits), fits_pts)
   
   # rearrange order of variables 
   print_fits %<>% 

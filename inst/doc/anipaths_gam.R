@@ -20,10 +20,8 @@ animate_paths(paths = vultures_paths,
 #  system("rm -r index.html css js images")
 
 ## ----multiple_bg, eval = F----------------------------------------------------
-#  library(ggmap)
-#  background <- list(center = c(-90, 10),
-#                     zoom = 3,
-#                     maptype = "satellite")
+#  background <- geodata::world(path = ".")
+#  sf::st_crs(background)$proj4string ## matches default projection in animate_paths()
 #  delta.t <- "week"
 #  animate_paths(paths = vultures_paths,
 #                delta.t = delta.t,
@@ -34,6 +32,7 @@ animate_paths(paths = vultures_paths,
 #                tail.colors = "unique",
 #                tail.wd = 0.7,
 #                background = background)
+#  system("rm -r gadm") ## remove geodata map from machine
 
 ## ---- eval = F----------------------------------------------------------------
 #  ## remove files used to generate animation
@@ -50,8 +49,7 @@ animate_paths(paths = vultures_paths,
 #                ID.name = "individual.local.identifier",
 #                uncertainty.type = 5,
 #                tail.colors = "unique",
-#                tail.wd = 0.5,
-#                background = TRUE)
+#                tail.wd = 0.5)
 
 ## ---- eval = F----------------------------------------------------------------
 #  ## remove files used to generate animation

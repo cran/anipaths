@@ -6,15 +6,15 @@
 #' @param col default is black
 #' @param center two-vector giving center of ellipse
 #' 
-#' @import  ellipse
-#' @importFrom scales alpha
+#' @import ellipse
+#' @importFrom grDevices adjustcolor
 #' @importFrom graphics polygon
 blur_point <- function(x, levels = seq(1e-3, 1-1e-1, l=15),
                        alpha_mult, col = "black", center){
   if ((sum(is.na(x)) + sum(is.na(center))) == 0){
     for(level in levels){
-      polygon(ellipse::ellipse(x, level = level, centre = center), border = NA,
-              col = scales::alpha(col, min(1, 1/length(levels)*3*alpha_mult/sqrt(prod(diag(x))))))
+      polygon(ellipse(x, level = level, centre = center), border = NA,
+              col = adjustcolor(col, min(1, 1/length(levels)*3*alpha_mult/sqrt(prod(diag(x))))))
     }
   }
 }

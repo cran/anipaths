@@ -120,13 +120,20 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
   for (var i = 0; i < sheets.length; i++) {
     if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
     try { var rules = sheets[i].cssRules; } catch (e) { continue; }
-    for (var j = 0; j < rules.length; j++) {
+    var j = 0;
+    while (j < rules.length) {
       var rule = rules[j];
       // check if there is a div.sourceCode rule
-      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
       var style = rule.style.cssText;
       // check if color or background-color is set
-      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
       // replace div.sourceCode by a pre.sourceCode rule
       sheets[i].deleteRule(j);
       sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
@@ -373,21 +380,21 @@ variability in the movement ecology of turkey vultures (Cathartes aura)
 in North and South America. Philosophical Transactions of the Royal
 Society B 20130195.</p>
 </blockquote>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(anipaths)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>vultures<span class="sc">$</span>POSIX <span class="ot">&lt;-</span> <span class="fu">as.POSIXct</span>(vultures<span class="sc">$</span>timestamp, <span class="at">tz =</span> <span class="st">&quot;UTC&quot;</span>)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>vultures_paths <span class="ot">&lt;-</span> vultures[<span class="fu">format</span>(vultures<span class="sc">$</span>POSIX, <span class="st">&quot;%Y&quot;</span>)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>                           <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">2009</span>, <span class="dv">2010</span>, <span class="dv">2011</span>), ] <span class="do">## limit attention to 2009, 2010, 2011</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>delta.t <span class="ot">&lt;-</span> <span class="st">&quot;week&quot;</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">#tails</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">delta.t =</span> delta.t,</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>,</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>              <span class="at">uncertainty.type =</span> <span class="dv">1</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(anipaths)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>vultures<span class="sc">$</span>POSIX <span class="ot">&lt;-</span> <span class="fu">as.POSIXct</span>(vultures<span class="sc">$</span>timestamp, <span class="at">tz =</span> <span class="st">&quot;UTC&quot;</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>vultures_paths <span class="ot">&lt;-</span> vultures[<span class="fu">format</span>(vultures<span class="sc">$</span>POSIX, <span class="st">&quot;%Y&quot;</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>                           <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">2009</span>, <span class="dv">2010</span>, <span class="dv">2011</span>), ] <span class="do">## limit attention to 2009, 2010, 2011</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>delta.t <span class="ot">&lt;-</span> <span class="st">&quot;week&quot;</span></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="co">#tails</span></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>              <span class="at">delta.t =</span> delta.t,</span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>,</span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a>              <span class="at">uncertainty.type =</span> <span class="dv">1</span>)</span></code></pre></div>
 <pre><code>## NULL</code></pre>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="do">## remove files used to generate animation</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">system</span>(<span class="st">&quot;rm -r index.html css js images&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="do">## remove files used to generate animation</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="fu">system</span>(<span class="st">&quot;rm -r index.html css js images&quot;</span>)</span></code></pre></div>
 </div>
 <div id="multiple-trajectories" class="section level3">
 <h3>Multiple Trajectories</h3>
@@ -412,22 +419,21 @@ to be a value greater than one which chooses how many paths you want to
 display. You can choose <code>tail.colors</code> to be
 <code>unique</code> so that the tail colors of each animal will be
 different.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggmap)</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>background <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">center =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">90</span>, <span class="dv">10</span>), </span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>                   <span class="at">zoom =</span> <span class="dv">3</span>, </span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>                   <span class="at">maptype =</span> <span class="st">&quot;satellite&quot;</span>)</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>delta.t <span class="ot">&lt;-</span> <span class="st">&quot;week&quot;</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">delta.t =</span> delta.t,</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>,</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>              <span class="at">uncertainty.type =</span> <span class="dv">5</span>,</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>              <span class="at">tail.colors =</span> <span class="st">&quot;unique&quot;</span>,</span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>              <span class="at">tail.wd =</span> <span class="fl">0.7</span>,</span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>              <span class="at">background =</span> background)</span></code></pre></div>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="do">## remove files used to generate animation</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">system</span>(<span class="st">&quot;rm -r index.html css js images&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>background <span class="ot">&lt;-</span> geodata<span class="sc">::</span><span class="fu">world</span>(<span class="at">path =</span> <span class="st">&quot;.&quot;</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>sf<span class="sc">::</span><span class="fu">st_crs</span>(background)<span class="sc">$</span>proj4string <span class="do">## matches default projection in animate_paths()</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>delta.t <span class="ot">&lt;-</span> <span class="st">&quot;week&quot;</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>              <span class="at">delta.t =</span> delta.t,</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>,</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>              <span class="at">uncertainty.type =</span> <span class="dv">5</span>,</span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>              <span class="at">tail.colors =</span> <span class="st">&quot;unique&quot;</span>,</span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>              <span class="at">tail.wd =</span> <span class="fl">0.7</span>,</span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>              <span class="at">background =</span> background)</span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="fu">system</span>(<span class="st">&quot;rm -r gadm&quot;</span>) <span class="do">## remove geodata map from machine</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="do">## remove files used to generate animation</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">system</span>(<span class="st">&quot;rm -r index.html css js images&quot;</span>)</span></code></pre></div>
 </div>
 <div id="blue-and-fin-whales" class="section level4">
 <h4>Blue and Fin Whales</h4>
@@ -441,20 +447,19 @@ at-sea assessment of Argos location accuracy for three species of large
 whales, and the effect of deep-diving behavior on location error. Animal
 Biotelemetry 8:20.</p>
 </blockquote>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>whales<span class="sc">$</span>POSIX <span class="ot">&lt;-</span> <span class="fu">as.POSIXct</span>(whales<span class="sc">$</span>timestamp)</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>whales_paths <span class="ot">&lt;-</span> whales[<span class="fu">format</span>(whales<span class="sc">$</span>POSIX, <span class="st">&quot;%Y&quot;</span>) <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">2014</span>),]</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>delta.t <span class="ot">&lt;-</span> <span class="dv">3600</span><span class="sc">*</span><span class="dv">12</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> whales_paths,</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">delta.t =</span> delta.t,</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>,</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>              <span class="at">uncertainty.type =</span> <span class="dv">5</span>,</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>              <span class="at">tail.colors =</span> <span class="st">&quot;unique&quot;</span>,</span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>              <span class="at">tail.wd =</span> <span class="fl">0.5</span>,</span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>              <span class="at">background =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="do">## remove files used to generate animation</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">system</span>(<span class="st">&quot;rm -r index.html css js images&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>whales<span class="sc">$</span>POSIX <span class="ot">&lt;-</span> <span class="fu">as.POSIXct</span>(whales<span class="sc">$</span>timestamp)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>whales_paths <span class="ot">&lt;-</span> whales[<span class="fu">format</span>(whales<span class="sc">$</span>POSIX, <span class="st">&quot;%Y&quot;</span>) <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">2014</span>),]</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>delta.t <span class="ot">&lt;-</span> <span class="dv">3600</span><span class="sc">*</span><span class="dv">12</span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> whales_paths,</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>              <span class="at">delta.t =</span> delta.t,</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>,</span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>              <span class="at">uncertainty.type =</span> <span class="dv">5</span>,</span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a>              <span class="at">tail.colors =</span> <span class="st">&quot;unique&quot;</span>,</span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a>              <span class="at">tail.wd =</span> <span class="fl">0.5</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="do">## remove files used to generate animation</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="fu">system</span>(<span class="st">&quot;rm -r index.html css js images&quot;</span>)</span></code></pre></div>
 </div>
 </div>
 <div id="blurred-ellipses" class="section level3">
@@ -467,18 +472,18 @@ specific animal. Unfortunately, the background image does not yet work
 with blurred ellipses. To choose a blurred ellipses animation, set the
 <code>uncertainty.type</code> argument to a value of
 <code>blur</code>.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">#blur ellipses</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>delta.t <span class="ot">&lt;-</span> <span class="st">&quot;week&quot;</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>              <span class="at">delta.t =</span> delta.t,</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>,</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">uncertainty.type =</span> <span class="st">&quot;blur&quot;</span>,</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>              <span class="at">tail.colors =</span> <span class="st">&quot;red&quot;</span>) </span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co">#blur ellipses</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>delta.t <span class="ot">&lt;-</span> <span class="st">&quot;week&quot;</span></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> vultures_paths, </span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>              <span class="at">delta.t =</span> delta.t,</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>,</span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>              <span class="at">uncertainty.type =</span> <span class="st">&quot;blur&quot;</span>,</span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>              <span class="at">tail.colors =</span> <span class="st">&quot;red&quot;</span>) </span></code></pre></div>
 <pre><code>## Would you like anipaths to write over existing files? Y/N</code></pre>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="do">## remove files used to generate animation</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">system</span>(<span class="st">&quot;rm -r index.html css js images&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="do">## remove files used to generate animation</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="fu">system</span>(<span class="st">&quot;rm -r index.html css js images&quot;</span>)</span></code></pre></div>
 </div>
 <div id="blue-and-fin-whales-1" class="section level4">
 <h4>Blue and Fin Whales</h4>
@@ -486,20 +491,20 @@ with blurred ellipses. To choose a blurred ellipses animation, set the
 vultures relative the observed spatial scale. The blurred ellipses will
 be larger in this animation making it easier to see than the previous
 example.</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggmap)</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>whales<span class="sc">$</span>POSIX <span class="ot">&lt;-</span> <span class="fu">as.POSIXct</span>(whales<span class="sc">$</span>timestamp, <span class="at">tz =</span> <span class="st">&quot;GMT&quot;</span>)</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>whales_paths <span class="ot">&lt;-</span> whales[<span class="fu">format</span>(whales<span class="sc">$</span>POSIX, <span class="st">&quot;%Y&quot;</span>) <span class="sc">%in%</span> <span class="dv">2015</span>,]</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>delta.t <span class="ot">&lt;-</span> <span class="dv">3600</span><span class="sc">*</span><span class="dv">12</span></span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> whales_paths,</span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">delta.t =</span> delta.t,</span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>,</span>
-<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>              <span class="at">uncertainty.type =</span> <span class="st">&quot;blur&quot;</span>,</span>
-<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>              <span class="at">tail.colors =</span> <span class="st">&quot;green&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">library</span>(ggmap)</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>whales<span class="sc">$</span>POSIX <span class="ot">&lt;-</span> <span class="fu">as.POSIXct</span>(whales<span class="sc">$</span>timestamp, <span class="at">tz =</span> <span class="st">&quot;GMT&quot;</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>whales_paths <span class="ot">&lt;-</span> whales[<span class="fu">format</span>(whales<span class="sc">$</span>POSIX, <span class="st">&quot;%Y&quot;</span>) <span class="sc">%in%</span> <span class="dv">2015</span>,]</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>delta.t <span class="ot">&lt;-</span> <span class="dv">3600</span><span class="sc">*</span><span class="dv">12</span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="fu">animate_paths</span>(<span class="at">paths =</span> whales_paths,</span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>              <span class="at">delta.t =</span> delta.t,</span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a>              <span class="at">coord =</span> <span class="fu">c</span>(<span class="st">&quot;location.long&quot;</span>, <span class="st">&quot;location.lat&quot;</span>),</span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a>              <span class="at">Time.name =</span> <span class="st">&quot;POSIX&quot;</span>,</span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a>              <span class="at">ID.name =</span> <span class="st">&quot;individual.local.identifier&quot;</span>,</span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a>              <span class="at">uncertainty.type =</span> <span class="st">&quot;blur&quot;</span>,</span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a>              <span class="at">tail.colors =</span> <span class="st">&quot;green&quot;</span>)</span></code></pre></div>
 <pre><code>## Would you like anipaths to write over existing files? Y/N</code></pre>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="do">## remove files used to generate animation</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">system</span>(<span class="st">&quot;rm -r index.html css js images&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="do">## remove files used to generate animation</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="fu">system</span>(<span class="st">&quot;rm -r index.html css js images&quot;</span>)</span></code></pre></div>
 </div>
 </div>
 
