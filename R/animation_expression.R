@@ -205,6 +205,7 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
         }
         ## add points and clique-wise network rings ----
         radius <- rep(1.2 * res, length(paths))
+        message("class(pt.colors) \n", class(pt.colors))
         for (id in c(dimmed, (1:length(paths))[!(1:length(paths)) %in% dimmed])) {
           covariate.ring <- pt.colors[id, 1 + id %in% dimmed]
           lwd <- 1 / 1.5

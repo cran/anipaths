@@ -14,7 +14,7 @@ check_overwrite(method, return.paths, ...)
 \item{...}{passed from animate_paths(); used to check for user-specified value for img.name}
 }
 \value{
-NULL, unless there is risk of overwritting and the user interrupts animation (\code{FALSE})
+NULL, unless there is risk of over-writting and the user interrupts animation (\code{FALSE})
 }
 \description{
 Check overwrite

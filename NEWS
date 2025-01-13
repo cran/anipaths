@@ -1,3 +1,8 @@
+anipaths v0.10.4 (Release date: 2025-1-13)
+==============
+
+* Bug-fix for error when specifying custom point colors.
+
 anipaths v0.10.3 (Release date: 2024-2-1)
 ==============
 

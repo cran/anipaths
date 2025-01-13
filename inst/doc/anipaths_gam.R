@@ -15,7 +15,7 @@ animate_paths(paths = vultures_paths,
               ID.name = "individual.local.identifier",
               uncertainty.type = 1)
 
-## ---- eval = F----------------------------------------------------------------
+## ----eval = F-----------------------------------------------------------------
 #  ## remove files used to generate animation
 #  system("rm -r index.html css js images")
 
@@ -34,7 +34,7 @@ animate_paths(paths = vultures_paths,
 #                background = background)
 #  system("rm -r gadm") ## remove geodata map from machine
 
-## ---- eval = F----------------------------------------------------------------
+## ----eval = F-----------------------------------------------------------------
 #  ## remove files used to generate animation
 #  system("rm -r index.html css js images")
 
@@ -51,7 +51,7 @@ animate_paths(paths = vultures_paths,
 #                tail.colors = "unique",
 #                tail.wd = 0.5)
 
-## ---- eval = F----------------------------------------------------------------
+## ----eval = F-----------------------------------------------------------------
 #  ## remove files used to generate animation
 #  system("rm -r index.html css js images")
 
@@ -66,7 +66,7 @@ animate_paths(paths = vultures_paths,
               uncertainty.type = "blur",
               tail.colors = "red") 
 
-## ---- eval = F----------------------------------------------------------------
+## ----eval = F-----------------------------------------------------------------
 #  ## remove files used to generate animation
 #  system("rm -r index.html css js images")
 

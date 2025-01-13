@@ -434,11 +434,11 @@ animate_paths <- function(paths, coord = c("x", "y"), Time.name = "time",
         brewer.pal(9, "Oranges")[3:9]
       )
     }
-    pt.colors <- cbind(
-      pt.colors[(1:length(paths) - 1) %% length(pt.colors) + 1],
-      adjustcolor("lightgray", 0.5)
-    )
   }
+  pt.colors <- cbind(
+    pt.colors[(1:length(paths) - 1) %% length(pt.colors) + 1],
+    adjustcolor("lightgray", 0.5)
+  )
   if (!is.null(covariate)) {
     color_covariate_function <- colorRamp(covariate.colors)
   }

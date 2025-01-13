@@ -1,8 +1,8 @@
-## ---- include = F-------------------------------------------------------------
+## ----include = F--------------------------------------------------------------
 options(rmarkdown.html_vignette.check_title = FALSE)
 knitr::opts_chunk$set(eval = F)
 
-## ---- fig.show='hold', fig.cap="test"-----------------------------------------
+## ----fig.show='hold', fig.cap="test"------------------------------------------
 #  library(anipaths)
 #  vultures$POSIX <- as.POSIXct(vultures$timestamp, tz = "UTC")
 #  vultures_paths <- vultures[format(vultures$POSIX, "%Y") == 2009, ] ## limit attention to 2009

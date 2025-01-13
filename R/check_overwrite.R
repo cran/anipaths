@@ -4,7 +4,7 @@
 #' @param return.paths passed from animate_paths()
 #' @param ... passed from animate_paths(); used to check for user-specified value for img.name
 #'
-#' @return NULL, unless there is risk of overwritting and the user interrupts animation (\code{FALSE})
+#' @return NULL, unless there is risk of over-writting and the user interrupts animation (\code{FALSE})
 #'
 check_overwrite <- function(method, return.paths, ...){
   
