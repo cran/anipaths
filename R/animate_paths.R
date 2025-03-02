@@ -18,7 +18,7 @@
 #' @param background Three possibilities: (1) A single background image over which animation will be overlayed, or a SpatRaster objects with one layers corresponding to each frame. (2) A list with values \code{center} (long/lat), \code{zoom}, and \code{maptype} (see \code{ggmap::get_googlemap()}) which will be used to generate a background for the animation based on Google maps tiles. Additional arguments may be added which will be passed to \code{ggmap::get_googlemap()}. (3) A logical value of \code{TRUE}, which will cue the function to get the best Google Map tile combination it can come up with. Note: \code{ggmap} must be installed for (2) and (3). Note: if you are calling \code{animate_paths()} several times in a short period of time you may get an error from Google for trying to pull tiles too often (e.g., \code{Error in download.file(url, destfile = tmp, quiet = !messaging, mode = "wb") : cannot open URL 'http://maps.googleapis...'}). Waiting a minute or so usually solves this.
 #' @param bg.axes logical: should animation place axis labels when using a background image (default is \code{TRUE}). If \code{RGoogleMaps} is used to produce background, labels will be "northing" and "easting". Otherwise, the strings given to \code{coord} will be used.
 #' @param bg.misc Character string which will be executed as \code{R} code after generating the background, and before adding trajectories, etc.
-#' @param bg.opts Options passed to \code{plot()} function call that makes background in each frame. For example, this could be used to specify blue ocean and gray landcover if \code{background} is a \code{MULTIPOLYGON} simple features object and \code{bg.opts = list(bg = "dodgerblue4", col = "gray", border = "gray")}.
+#' @param bg.opts Options passed to \code{plot()} function call that makes background in each frame. For example, this could be used to specify blue ocean and gray land cover if \code{background} is a \code{MULTIPOLYGON} simple features object and \code{bg.opts = list(bg = "dodgerblue4", col = "gray", border = "gray")}.
 #' @param blur.size a integer of the size for blur points; default is 8
 #' @param covariate The name of the column in \code{paths} that identifies the covariate to be mapped to a ring of color around each point.
 #' @param covariate.colors vector of colors which will be used in their given order to make a color ramp (see \code{colorRamp()})
@@ -454,9 +454,16 @@ animate_paths <- function(paths, coord = c("x", "y"), Time.name = "time",
         for(rep in 1:dim(paths.interp[[i]])[2]){
           paths.i.rep.df <- as.data.frame(paths.interp[[i]][, rep, c('mu.x', 'mu.y')])
           paths.i.rep.df.na.ind <- unique(which(is.na(paths.i.rep.df), arr.ind = T)[, 1])
-          paths.interp[[i]][-paths.i.rep.df.na.ind, rep, c('mu.x', 'mu.y')] <- 
-            googlemap_proj(st_as_sf(paths.i.rep.df[-paths.i.rep.df.na.ind, ], 
-                                    coords = c('mu.x', 'mu.y'), crs = paths.proj), bg[[1]])
+          if(length(paths.i.rep.df.na.ind) > 0){
+            paths.interp[[i]][-paths.i.rep.df.na.ind, rep, c('mu.x', 'mu.y')] <- 
+              googlemap_proj(st_as_sf(paths.i.rep.df[-paths.i.rep.df.na.ind, ], 
+                                      coords = c('mu.x', 'mu.y'), crs = paths.proj), bg[[1]])
+          } else {
+            paths.interp[[i]][, rep, c('mu.x', 'mu.y')] <- 
+              googlemap_proj(st_as_sf(paths.i.rep.df, coords = c('mu.x', 'mu.y'), crs = paths.proj), 
+                             bg[[1]])
+            
+          }
         }
       }
       scale <- get_googlemap_min_scale(bg[[1]])$scale

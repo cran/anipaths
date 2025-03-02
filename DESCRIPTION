@@ -1,8 +1,8 @@
 Package: anipaths
 Type: Package
 Title: Animation of Multiple Trajectories with Uncertainty
-Version: 0.10.4
-Date: 2025-1-13
+Version: 0.10.5
+Date: 2025-3-1
 Authors@R: c(person("Henry", "Scharf", email = "hscharf@arizona.edu",
                     role = c("aut", "cre")),
              person("Kristine", "Dinh",
@@ -24,10 +24,10 @@ VignetteBuilder: knitr
 LazyData: true
 Encoding: UTF-8
 NeedsCompilation: no
-Packaged: 2025-01-13 17:14:17 UTC; hscharf
+Packaged: 2025-03-01 21:10:14 UTC; hscharf
 Author: Henry Scharf [aut, cre],
   Kristine Dinh [aut],
   Rosales Hugo [aut],
   Rivera Angelica [aut]
 Repository: CRAN
-Date/Publication: 2025-01-13 17:30:20 UTC
+Date/Publication: 2025-03-02 03:50:02 UTC

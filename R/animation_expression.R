@@ -118,8 +118,7 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
             mtext(text = "northing [m]", side = 2, line = 2.6)
             axis(2, at = seq(0, 1280, l = 5), signif(seq(0, 1280 / scale[2], l = 5), 3))
           }
-        } 
-        if (length(grep("Spat", class(bg[[frame]]))) > 0){
+        } else if (length(grep("Spat", class(bg[[frame]]))) > 0){
           do.call(terra::plot, c(
             list(
               "x" = bg[[frame]], xlab = "", ylab = "",
@@ -205,7 +204,6 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
         }
         ## add points and clique-wise network rings ----
         radius <- rep(1.2 * res, length(paths))
-        message("class(pt.colors) \n", class(pt.colors))
         for (id in c(dimmed, (1:length(paths))[!(1:length(paths)) %in% dimmed])) {
           covariate.ring <- pt.colors[id, 1 + id %in% dimmed]
           lwd <- 1 / 1.5
@@ -349,11 +347,11 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
         ## set par options ----
         do.call(par, par.opts)
         ## add background ----
-        if (class(bg[[frame]])[1] == "ggmap") {
-          par(mar = c(0.1, 0.1, 0.1, 0.1))
-          if (bg.axes) {
-            par(mar = c(4.1, 4.1, 0.1, 0.1))
-          }
+        par(mar = c(0.1, 0.1, 0.1, 0.1))
+        if (bg.axes) {
+          par(mar = c(4.1, 4.1, 0.1, 0.1))
+        }
+        if (inherits(bg[[frame]], "ggmap")) {
           do.call(plot, c(list("x" = bg[[frame]]), xlab = "", ylab = "", bg.opts))
           if (bg.axes) {
             mtext(text = "easting [m]", side = 1, line = 2.6)
@@ -361,11 +359,15 @@ animation_expression <- function(bg, bg.axes, bg.misc, bg.opts, blur.size, cliqu
             mtext(text = "northing [m]", side = 2, line = 2.6)
             axis(2, at = seq(0, 1280, l = 5), signif(seq(0, 1280 / scale[2], l = 5), 3))
           }
+        } else if (length(grep("Spat", class(bg[[frame]]))) > 0){
+          do.call(terra::plot, c(
+            list(
+              "x" = bg[[frame]], xlab = "", ylab = "",
+              "xlim" = xlim, "ylim" = ylim, "main" = main
+            ),
+            bg.opts
+          ))
         } else {
-          par(mar = c(0.1, 0.1, 0.1, 0.1))
-          if (bg.axes) {
-            par(mar = c(4.1, 4.1, 0.1, 0.1))
-          }
           do.call(plot, c(
             list(
               "x" = bg[[frame]], xlab = "", ylab = "",

@@ -82,7 +82,7 @@ If all paths are already synchronous, another option for passing the data is to 
 
 \item{bg.misc}{Character string which will be executed as \code{R} code after generating the background, and before adding trajectories, etc.}
 
-\item{bg.opts}{Options passed to \code{plot()} function call that makes background in each frame. For example, this could be used to specify blue ocean and gray landcover if \code{background} is a \code{MULTIPOLYGON} simple features object and \code{bg.opts = list(bg = "dodgerblue4", col = "gray", border = "gray")}.}
+\item{bg.opts}{Options passed to \code{plot()} function call that makes background in each frame. For example, this could be used to specify blue ocean and gray land cover if \code{background} is a \code{MULTIPOLYGON} simple features object and \code{bg.opts = list(bg = "dodgerblue4", col = "gray", border = "gray")}.}
 
 \item{blur.size}{a integer of the size for blur points; default is 8}
 
